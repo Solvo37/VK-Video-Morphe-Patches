@@ -404,12 +404,15 @@ jobs:
             echo '=== request_midroll / midroll references ==='
             grep -Rni -E -C 25 'request_midroll|"(midroll)"|AdSection;->MIDROLL|InstreamAdEngine' dist/compat-decode 2>/dev/null || true
             echo
+            echo '=== ad / clips semantic anchors ==='
+            grep -Rni -E -C 12 'ClipsFeatures;|SdkClipsAdsFeaturesParams|ShortVideoGetRecomResponseDto|SdkVideoFile|ClipsMarketAdHeaderClickConfig|ClipsBannerCompanionConfig|VideoAdvertisementsComponent|AD_FREE_SUBSCRIPTION|VideoDiscoverAdsDto|rxjava3/core/q;->subscribe|AdShowCaseBannerVh' dist/compat-decode 2>/dev/null || true
+            echo
             echo '=== known ad resource names ==='
-            grep -Rni -E -C 8 'catalog_ad_banner|video_player_ads_panel|video_ad_banner' dist/compat-decode 2>/dev/null || true
+            grep -Rni -E -C 8 'catalog_ad_banner|catalog_ad_banner_medium|video_player_ads_panel|video_ad_banner' dist/compat-decode 2>/dev/null || true
           } > dist/compat-diagnostics/grep.txt
 
           find dist/compat-decode -type f \( -name '*.smali' -o -name '*.xml' \) -print0 \
-            | xargs -0 grep -l -E 'request_midroll|AdSection;->MIDROLL|InstreamAdEngine|catalog_ad_banner|video_player_ads_panel|video_ad_banner' 2>/dev/null \
+            | xargs -0 grep -l -E 'request_midroll|AdSection;->MIDROLL|InstreamAdEngine|ClipsFeatures;|SdkClipsAdsFeaturesParams|ShortVideoGetRecomResponseDto|SdkVideoFile|ClipsMarketAdHeaderClickConfig|ClipsBannerCompanionConfig|VideoAdvertisementsComponent|AD_FREE_SUBSCRIPTION|VideoDiscoverAdsDto|rxjava3/core/q;->subscribe|AdShowCaseBannerVh|catalog_ad_banner|catalog_ad_banner_medium|video_player_ads_panel|video_ad_banner' 2>/dev/null \
             | sort > dist/compat-diagnostics/matching-files.txt || true
 
           while IFS= read -r file; do
@@ -419,6 +422,21 @@ jobs:
             mkdir -p "$(dirname "$out")"
             cp "$file" "$out"
           done < dist/compat-diagnostics/matching-files.txt
+
+          # Resource file contents do not contain their own file names, so copy
+          # the known ad layouts explicitly when present.
+          while IFS= read -r layout; do
+            [[ -f "$layout" ]] || continue
+            rel="${layout#dist/compat-decode/}"
+            out="dist/compat-diagnostics/files/$rel"
+            mkdir -p "$(dirname "$out")"
+            cp "$layout" "$out"
+          done < <(find dist/compat-decode -type f \( \
+            -name 'catalog_ad_banner.xml' -o \
+            -name 'catalog_ad_banner_medium.xml' -o \
+            -name 'video_ad_banner.xml' -o \
+            -name 'video_player_ads_panel.xml' \
+          \) -print)
 
       - name: Open compatibility issue on gate failure
         if: steps.decision.outputs.build == 'true' && (steps.patch.outcome == 'failure' || steps.static_gate.outcome == 'failure')
