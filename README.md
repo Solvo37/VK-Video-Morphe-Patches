@@ -9,10 +9,12 @@
 
 ## Скачать
 
+> ⚠️ **VK Видео 1.164.0 временно не использовать:** на реальном устройстве подтверждён краш примерно через 3 секунды после запуска. Релиз помещён в runtime-quarantine до разбора crash log.
+
 **Текущий стабильный релиз: 1.163.6**  
 Android внутри APK: **1.163 / versionCode 51920**.
 
-➡️ [Скачать последний APK](https://github.com/Solvo37/vk-video-morphe-patches/releases/latest)
+➡️ [Скачать стабильный APK 1.163.6](https://github.com/Solvo37/vk-video-morphe-patches/releases/tag/1.163.6)
 
 В Releases публикуется **только один APK**. Служебные отчёты, checksums и build metadata остаются в GitHub Actions и не засоряют список загрузок.
 
@@ -32,7 +34,7 @@ Android внутри APK: **1.163 / versionCode 51920**.
 
 1. Если установлен официальный **VK Видео**, удалите его один раз — официальный APK и этот проект подписаны разными сертификатами.
 2. Обычный **VK** удалять не нужно.
-3. Установите APK из [Latest Release](https://github.com/Solvo37/vk-video-morphe-patches/releases/latest).
+3. Пока 1.164 находится в runtime-quarantine, установите APK из [стабильного релиза 1.163.6](https://github.com/Solvo37/vk-video-morphe-patches/releases/tag/1.163.6).
 
 Все релизы проекта подписываются одним постоянным сертификатом, поэтому следующие сборки ставятся поверх предыдущих.
 
