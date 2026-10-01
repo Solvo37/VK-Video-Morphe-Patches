@@ -520,11 +520,11 @@ jobs:
           OUT="dist/VK-Video-${VERSION}-patched.apk"
           ALIGNED="dist/aligned-patched.apk"
 
-          zipalign -f -p 4 dist/unsigned-patched.apk "$ALIGNED"
+          zipalign -f -v 4 dist/unsigned-patched.apk "$ALIGNED"
 
           apksigner sign             --ks signing.jks             --ks-pass env:STORE_PASSWORD             --ks-key-alias "$KEY_ALIAS"             --key-pass env:KEY_PASSWORD             --v1-signing-enabled false             --v2-signing-enabled false             --v3-signing-enabled true             --v4-signing-enabled false             --out "$OUT"             "$ALIGNED"
 
-          zipalign -c -p 4 "$OUT"
+          zipalign -c -v 4 "$OUT"
           apksigner verify --verbose --print-certs "$OUT"
 
           CERT="$(apksigner verify --print-certs "$OUT"             | sed -n 's/^Signer #1 certificate SHA-256 digest: //p'             | head -n1 | tr '[:upper:]' '[:lower:]' | tr -d ':')"
