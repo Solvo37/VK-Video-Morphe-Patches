@@ -335,6 +335,8 @@ val filterClipServerFeedAdsPatch = bytecodePatch(
             )
         }
 
+        // Required in 1.164: this is a second live feed conversion path, not
+        // merely a duplicate generated method.
         ClipAlternateServerFeedMapperFingerprint.method.apply {
             check(implementation!!.registerCount >= 6) {
                 "Alternate Clips feed mapper has insufficient local registers"

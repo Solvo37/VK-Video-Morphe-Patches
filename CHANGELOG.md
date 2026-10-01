@@ -6,7 +6,7 @@ Completeness fixes for ordinary-video and Clips advertising paths in VK Video 1.
 
 - neutralized the legacy `VideoAdsDto` embedded in ordinary `VideoVideoFullDto` responses before it becomes an `InstreamAd`, closing the remaining preroll/midroll source;
 - added filtering to the alternate synthetic Clips response mapper, which consumed the same server `StaticAd`, `MarketAd`, `FloatingAd`, and MyTarget variants outside the previously patched primary mapper;
-- quarantined the rebuilt APK until local runtime validation completes.
+- confirmed both injected paths in the rebuilt DEX and passed the Android 15 cold-start runtime gate without a fatal exception.
 
 ## 0.2.10 — 2026-10-02
 

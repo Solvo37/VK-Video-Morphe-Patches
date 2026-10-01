@@ -9,8 +9,8 @@
 
 ## P1 — ad removal correctness
 
-- Trace and block the remaining ordinary-video preroll path shown by users; XML layout hiding does not stop the advertising media source.
-- Validate Clips for long scrolling sessions and confirm that removing SDK mapper `null` returns eliminated black feed positions.
+- Validate the newly blocked legacy ordinary-video `VideoAdsDto` path against real signed-in playback sessions and future upstream versions.
+- Validate Clips for long scrolling sessions after both server response mappers were patched; confirm there are no ads or empty feed positions.
 - Recheck server-provided StaticAd, MarketAd, FloatingAd and MyTarget variants against every new upstream version.
 - Add runtime assertions that ad filtering removes complete feed entries instead of leaving empty adapter positions.
 
