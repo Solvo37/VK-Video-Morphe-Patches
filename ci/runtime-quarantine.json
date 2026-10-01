@@ -1,0 +1,10 @@
+{
+  "entries": [
+    {
+      "version_name": "1.164",
+      "version_code": 52379,
+      "release_tag": "1.164.0",
+      "reason": "Real-device startup crash about 3 seconds after launch; static gates are insufficient. Keep unpublished until runtime crash is diagnosed and retested."
+    }
+  ]
+}
