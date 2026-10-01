@@ -1,5 +1,5 @@
 {
-  "version": "0.2.7",
+  "version": "0.2.8",
   "patches": [
     "Fix install conflict with stock VK",
     "Bypass native signature check",
@@ -11,9 +11,8 @@
     "Filter Clips SDK ads",
     "Block deep midroll ads",
     "Hide home showcase ads",
-    "Hide ad XML surfaces",
     "Disable video ad repository",
-    "Hide profile ad-free promo",
+    "Disable ad-free subscription promo",
     "Hide promoted banner content",
     "Disable ad pixel tracking"
   ]

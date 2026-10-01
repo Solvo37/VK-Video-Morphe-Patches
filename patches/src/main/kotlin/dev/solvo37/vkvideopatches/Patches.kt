@@ -360,45 +360,6 @@ val filterClipSdkAdsPatch = bytecodePatch(
     compatibleWith(VK_VIDEO)
 
     execute {
-        val sdkAdMapper = ClipSdkAdVideoMapperFingerprint.method
-        val sdkAdPredicateReference = sdkAdMapper.implementation!!.instructions
-            .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
-            .firstOrNull {
-                it.endsWith("->f(Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;)Z")
-            }
-            ?: error("Clips SDK ad predicate was not found in the SDK video mapper")
-
-        val returnNullForSdkAd = """
-            invoke-static {p1}, $sdkAdPredicateReference
-            move-result v0
-            if-eqz v0, :original
-
-            const/4 v0, 0x0
-            return-object v0
-        """.trimIndent()
-
-        sdkAdMapper.apply {
-            check(implementation!!.registerCount >= 4) {
-                "Clips SDK ad mapper has no safe local register"
-            }
-            addInstructionsWithLabels(
-                0,
-                returnNullForSdkAd,
-                ExternalLabel("original", getInstruction(0))
-            )
-        }
-
-        ClipSdkAdVideoDefaultMapperFingerprint.method.apply {
-            check(implementation!!.registerCount >= 5) {
-                "Clips SDK default ad mapper has no safe local register"
-            }
-            addInstructionsWithLabels(
-                0,
-                returnNullForSdkAd,
-                ExternalLabel("original", getInstruction(0))
-            )
-        }
-
         ClipSdkIntermediateListFingerprint.method.apply {
             check(implementation!!.registerCount >= 7) {
                 "Clips SDK list mapper has insufficient local registers"
@@ -548,18 +509,31 @@ val disableVideoAdRepositoryPatch = bytecodePatch(
 }
 
 @Suppress("unused")
-val hideProfileAdFreePromoPatch = bytecodePatch(
-    name = "Hide profile ad-free promo",
-    description = "Removes the VK Premium / ad-free trial promotional card from the profile My screen before it enters the adapter list.",
+val disableAdFreeSubscriptionPromoPatch = bytecodePatch(
+    name = "Disable ad-free subscription promo",
+    description = "Disables VK's VIDEO_AD_FREE_SUBSCRIPTION feature gate so profile promo items are never created.",
     default = true
 ) {
     compatibleWith(VK_VIDEO)
 
     execute {
-        // wc6.q.i(ArrayList) only appends AD_FREE_SUBSCRIPTION to the profile
-        // menu when the feature/config gates are enabled. Returning here keeps
-        // the item out of the list entirely, without touching other profile UI.
-        ProfileAdFreeMenuItemFingerprint.method.addInstruction(0, "return-void")
+        VideoFeaturesEnabledFingerprint.method.apply {
+            check(implementation!!.registerCount >= 2) {
+                "VideoFeatures.a() has no safe local register for the ad-free promo gate"
+            }
+
+            addInstructionsWithLabels(
+                0,
+                """
+                    sget-object v0, $VIDEO_FEATURES->VIDEO_AD_FREE_SUBSCRIPTION:$VIDEO_FEATURES
+                    if-ne p0, v0, :original
+
+                    const/4 v0, 0x0
+                    return v0
+                """,
+                ExternalLabel("original", getInstruction(0))
+            )
+        }
     }
 }
 

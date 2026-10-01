@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.8 — 2026-10-02
+
+Runtime stability hotfix for VK Video 1.164:
+
+- replaced the unsafe profile data-provider short-circuit with the app's own `VIDEO_AD_FREE_SUBSCRIPTION` feature gate;
+- stopped returning `null` from Clips SDK video mappers, which could leave black, non-renderable positions in the vertical feed;
+- kept ad removal at the server-feed and intermediate-list stages, where complete feed entries can be removed safely;
+- removed XML layout collapsing from the release profile while player/runtime behavior is being validated.
+
 ## 0.2.7 — 2026-10-01
 
 VK Видео 1.164 compatibility and remaining XML ad-surface cleanup:

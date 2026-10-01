@@ -1,7 +1,6 @@
 package dev.solvo37.vkvideopatches
 
 import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -316,19 +315,6 @@ internal object VideoInstreamSectionsConstructorFingerprint : Fingerprint(
         "Ljava/util/List;",
         "Ljava/util/List;",
         "Ljava/util/List;"
-    )
-)
-
-// Profile menu data provider. This method only appends the "ad-free
-// subscription" promotional item to the "My" screen.
-internal object ProfileAdFreeMenuItemFingerprint : Fingerprint(
-    returnType = "V",
-    parameters = listOf("Ljava/util/ArrayList;"),
-    filters = listOf(
-        fieldAccess(
-            definingClass = "Lcom/vk/video/screens/profile/adapter/ProfileMenuItemType;",
-            name = "AD_FREE_SUBSCRIPTION"
-        )
     )
 )
 
