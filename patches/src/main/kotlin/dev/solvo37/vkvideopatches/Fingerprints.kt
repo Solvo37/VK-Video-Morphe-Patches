@@ -2,6 +2,7 @@ package dev.solvo37.vkvideopatches
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.methodCall
+import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
 
 internal object VideoFeaturesEnabledFingerprint : Fingerprint(
@@ -183,8 +184,6 @@ internal object ClipServerFeedMapperFingerprint : Fingerprint(
 // Runtime instream gate used by VideoAutoPlay before it switches the player
 // into the MIDROLL ad path.
 internal object MidrollRuntimeGateFingerprint : Fingerprint(
-    definingClass = "Lx13/e;",
-    name = "b",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Z",
     parameters = listOf(
@@ -230,30 +229,35 @@ internal object ClipSdkIntermediateListFingerprint : Fingerprint(
 
 // Dedicated runtime path that requests an in-player midroll.
 internal object MidrollRequestRunnableFingerprint : Fingerprint(
-    definingClass = "Ln33/t;",
     name = "run",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "V",
-    parameters = emptyList()
+    parameters = emptyList(),
+    filters = listOf(
+        string("request_midroll")
+    )
 )
 
 // Instream facade midpoint setup: reads the "midroll" section and calculates
 // the time points stored into the ad engine.
 internal object InstreamMidpointConfigFingerprint : Fingerprint(
-    definingClass = "Lxo/a;",
-    name = "d",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "V",
-    parameters = listOf("F")
+    parameters = listOf("F"),
+    filters = listOf(
+        string("InstreamAd: Midpoints already configured"),
+        string("midroll")
+    )
 )
 
 // Direct named-section entry point for instream ads.
 internal object InstreamNamedSectionStartFingerprint : Fingerprint(
-    definingClass = "Lxo/a;",
-    name = "c",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "V",
-    parameters = listOf("Ljava/lang/String;")
+    parameters = listOf("Ljava/lang/String;"),
+    filters = listOf(
+        string("InstreamAdEngine: No section with name ")
+    )
 )
 // Home "For you" native MyTarget showcase card factory.
 internal object HomeShowcaseCatalogFactoryFingerprint : Fingerprint(
