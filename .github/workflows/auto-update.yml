@@ -27,7 +27,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: vk-video-auto-build
+  group: vk-video-auto-build-v2
   cancel-in-progress: true
 
 env:
