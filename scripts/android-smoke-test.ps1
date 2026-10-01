@@ -33,12 +33,18 @@ $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $logPath = Join-Path $resultRoot "$stamp-$Serial-logcat.txt"
 $summaryPath = Join-Path $resultRoot "$stamp-$Serial-summary.txt"
 
-& $adb -s $Serial install -r $resolvedApk | Out-Host
+$installOutput = & $adb -s $Serial install -r $resolvedApk 2>&1
+$installExitCode = $LASTEXITCODE
+$installOutput | Out-Host
+if ($installExitCode -ne 0 -or ($installOutput -join "`n") -notmatch "Success") {
+    throw "APK installation failed on $Serial"
+}
+& $adb -s $Serial shell pm clear $PackageName | Out-Host
 & $adb -s $Serial logcat -c
 & $adb -s $Serial shell am force-stop $PackageName
 
 $activity = (& $adb -s $Serial shell cmd package resolve-activity --brief $PackageName 2>$null | Select-Object -Last 1)
-if ([string]::IsNullOrWhiteSpace($activity)) {
+if ([string]::IsNullOrWhiteSpace($activity) -or $activity -match "No activity found") {
     throw "Launcher activity not found for $PackageName"
 }
 $activity = $activity.Trim()
