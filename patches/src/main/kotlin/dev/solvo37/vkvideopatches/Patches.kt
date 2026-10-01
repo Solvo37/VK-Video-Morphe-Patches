@@ -7,6 +7,7 @@ import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.smali.ExternalLabel
 import dev.solvo37.vkvideopatches.Constants.VK_VIDEO
+import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 
 private const val VIDEO_FEATURES = "Lcom/vk/toggle/features/VideoFeatures;"
@@ -169,16 +170,19 @@ val removeClipAdsPatch = bytecodePatch(
             return v0
         """.trimIndent()
 
-        listOf(
-            ClipAdsPromoProviderFingerprint.method,
-            ClipAdsStaticProviderFingerprint.method,
-            ClipAdsLabelProviderFingerprint.method,
-            ClipMarketAdProviderFingerprint.method,
-            ClipMarketAdChoicesProviderFingerprint.method,
-            ClipAdsVideoOwnerProviderFingerprint.method,
-            ClipFeedEndRewatchAdProviderFingerprint.method,
-            ClipAdsVideoProviderFingerprint.method,
-            ClipAdsCarouselProviderFingerprint.method,
+        // Provider internals are R8-obfuscated and can move between app versions.
+        // Treat these as defense-in-depth only: the stable feature gates, server
+        // feed filter and SDK mappers below remain mandatory fail-closed layers.
+        listOfNotNull(
+            ClipAdsPromoProviderFingerprint.methodOrNull,
+            ClipAdsStaticProviderFingerprint.methodOrNull,
+            ClipAdsLabelProviderFingerprint.methodOrNull,
+            ClipMarketAdProviderFingerprint.methodOrNull,
+            ClipMarketAdChoicesProviderFingerprint.methodOrNull,
+            ClipAdsVideoOwnerProviderFingerprint.methodOrNull,
+            ClipFeedEndRewatchAdProviderFingerprint.methodOrNull,
+            ClipAdsVideoProviderFingerprint.methodOrNull,
+            ClipAdsCarouselProviderFingerprint.methodOrNull,
         ).forEach { method ->
             check(method.implementation!!.registerCount >= 2) {
                 "Clips ad provider method ${method.name} has no free local register"
@@ -186,7 +190,9 @@ val removeClipAdsPatch = bytecodePatch(
             method.addInstructions(0, returnFalse)
         }
 
-        ClipYandexAdParamsProviderFingerprint.method.addInstructions(
+        // These config-provider hooks are likewise optional across R8 revisions.
+        // If they still match the 1.163 provider shape, keep applying them.
+        ClipYandexAdParamsProviderFingerprint.methodOrNull?.addInstructions(
             0,
             """
                 sget-object v0, Lwo0/k;->b:Lwo0/k;
@@ -194,7 +200,7 @@ val removeClipAdsPatch = bytecodePatch(
             """
         )
 
-        ClipMarketAdHeaderClicksProviderFingerprint.method.addInstructions(
+        ClipMarketAdHeaderClicksProviderFingerprint.methodOrNull?.addInstructions(
             0,
             """
                 sget-object v0, Lcom/vk/clips/sdk/shared/viewer/experiments/models/ClipsMarketAdHeaderClickConfig;->c:Lcom/vk/clips/sdk/shared/viewer/experiments/models/ClipsMarketAdHeaderClickConfig;
@@ -207,11 +213,11 @@ val removeClipAdsPatch = bytecodePatch(
             return-object v0
         """.trimIndent()
 
-        ClipSellerBannerCompanionProviderFingerprint.method.addInstructions(
+        ClipSellerBannerCompanionProviderFingerprint.methodOrNull?.addInstructions(
             0,
             returnDisabledBannerCompanion
         )
-        ClipBannerCompanionProviderFingerprint.method.addInstructions(
+        ClipBannerCompanionProviderFingerprint.methodOrNull?.addInstructions(
             0,
             returnDisabledBannerCompanion
         )
@@ -341,8 +347,16 @@ val filterClipSdkAdsPatch = bytecodePatch(
     compatibleWith(VK_VIDEO)
 
     execute {
+        val sdkAdMapper = ClipSdkAdVideoMapperFingerprint.method
+        val sdkAdPredicateReference = sdkAdMapper.implementation!!.instructions
+            .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
+            .firstOrNull {
+                it.endsWith("->f(Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;)Z")
+            }
+            ?: error("Clips SDK ad predicate was not found in the SDK video mapper")
+
         val returnNullForSdkAd = """
-            invoke-static {p1}, Lc01/c;->f(Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;)Z
+            invoke-static {p1}, $sdkAdPredicateReference
             move-result v0
             if-eqz v0, :original
 
@@ -350,7 +364,7 @@ val filterClipSdkAdsPatch = bytecodePatch(
             return-object v0
         """.trimIndent()
 
-        ClipSdkAdVideoMapperFingerprint.method.apply {
+        sdkAdMapper.apply {
             check(implementation!!.registerCount >= 4) {
                 "Clips SDK ad mapper has no safe local register"
             }
@@ -372,14 +386,24 @@ val filterClipSdkAdsPatch = bytecodePatch(
             )
         }
 
-        // r11.d.f(): e$d = StaticAds and e$b = MarketAds.
-        val staticAdIntermediate = "Lk01/e\$d;"
-        val marketAdIntermediate = "Lk01/e\$b;"
-
         ClipSdkIntermediateListFingerprint.method.apply {
             check(implementation!!.registerCount >= 7) {
                 "Clips SDK list mapper has insufficient local registers"
             }
+
+            // R8 renames the intermediate sealed class package between releases.
+            // Derive the StaticAds ($d) and MarketAds ($b) concrete types from
+            // the mapper's own INSTANCE_OF instructions instead of hard-coding
+            // their 1.163 names.
+            val intermediateTypes = implementation!!.instructions
+                .filter { it.opcode == Opcode.INSTANCE_OF }
+                .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
+                .distinct()
+
+            val staticAdIntermediate = intermediateTypes.firstOrNull { it.endsWith("\$d;") }
+                ?: error("StaticAds intermediate type was not found")
+            val marketAdIntermediate = intermediateTypes.firstOrNull { it.endsWith("\$b;") }
+                ?: error("MarketAds intermediate type was not found")
             addInstructionsWithLabels(
                 0,
                 """
@@ -456,11 +480,9 @@ val hideHomeShowcaseAdsPatch = bytecodePatch(
 
     execute {
         HomeShowcaseCatalogFactoryFingerprint.method.apply {
-            val adFactoryReference =
-                "Lcom/vk/catalog2/common/ui/mvp/configuration/a;->a(Lai0/f;Lwp/a;)Lcom/vk/catalog2/common/ui/holders/ads/AdShowCaseBannerVh;"
-
             val adFactoryIndex = implementation!!.instructions.indexOfFirst { instruction ->
-                (instruction as? ReferenceInstruction)?.reference?.toString() == adFactoryReference
+                (instruction as? ReferenceInstruction)?.reference?.toString()
+                    ?.endsWith(")Lcom/vk/catalog2/common/ui/holders/ads/AdShowCaseBannerVh;") == true
             }
             check(adFactoryIndex >= 0) {
                 "Home showcase AdShowCaseBannerVh factory call not found"
