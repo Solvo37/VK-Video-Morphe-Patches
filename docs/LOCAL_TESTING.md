@@ -8,7 +8,7 @@ Static patch gates are not sufficient for release approval. Every candidate APK 
 - AVD root: `C:\AndroidLab\Avd`
 - JDK 21: `C:\AndroidLab\Jdk21`
 - Candidate APKs: `C:\AndroidLab\APKs`
-- Accelerated emulator profiles: `VKVideo_API31_Play`, `VKVideo_API35_Play`
+- Release-gate emulator profile: `VKVideo_API35_Play`
 
 The SDK and AVD paths intentionally contain ASCII only because QEMU on Windows can corrupt Cyrillic paths before starting the guest.
 
@@ -22,19 +22,21 @@ Start the emulator, wait for `sys.boot_completed=1`, then run:
 
 The test installs the APK, clears logcat, cold-starts the launcher activity, observes the process for 15 seconds, saves the complete log, and fails if the process dies or Android reports a fatal exception.
 
-To run the accelerated emulator matrix on Android 12 and Android 15:
+The project release gate covers Android 13 and newer. The current automated profile is Android 15; Android 13 and 14 profiles are tracked in the roadmap.
+
+To run the release-gate emulator matrix:
 
 ```powershell
 .\scripts\android-smoke-matrix.ps1 -ApkPath C:\AndroidLab\APKs\candidate.apk
 ```
 
-Android 9 is the app's declared minimum (`minSdk 28`), but its x86_64 Google Play image cannot install this ARM-only APK and the Windows x86_64 emulator cannot boot an ARM64 guest. Android 9 therefore requires a physical ARM64 device. An `INSTALL_FAILED_NO_MATCHING_ABIS` result from the x86_64 API 28 emulator is a laboratory limitation, not an application failure.
+The upstream app still declares `minSdk 28`, but project runtime support and release qualification begin at Android 13.
 
 ## Release policy
 
 1. Keep a new or previously crashing versionCode in runtime quarantine.
 2. Let GitHub Actions produce the signed diagnostic artifact without publishing a Release.
 3. Download the signed candidate to `C:\AndroidLab\APKs`.
-4. Run the emulator matrix and test Android 9 on a physical ARM64 device.
+4. Run the emulator matrix and, when available, a physical ARM64 device on Android 13 or newer.
 5. Exercise Home, Clips, ordinary video playback, profile, rotation, and background/foreground transitions.
 6. Remove quarantine only after the recorded tests pass; the next workflow run may then publish the immutable release.

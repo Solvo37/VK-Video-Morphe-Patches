@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$ApkPath,
-    [string[]]$Avds = @("VKVideo_API31_Play", "VKVideo_API35_Play"),
+    [string[]]$Avds = @("VKVideo_API35_Play"),
     [int]$BootTimeoutSeconds = 300,
     [int]$ObservationSeconds = 15
 )

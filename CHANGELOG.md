@@ -1,12 +1,21 @@
 # Changelog
 
+## 0.2.10 — 2026-10-02
+
+Production promotion of the tested VK Video 1.164 startup fix:
+
+- promoted the same bytecode fix that passed repeated Android 15 cold-start smoke tests;
+- set Android 13 and newer as the supported release baseline;
+- cleared the temporary runtime quarantine and added the remaining work to the public roadmap.
+
 ## 0.2.9 — 2026-10-02
 
 Confirmed startup-crash fix and local runtime validation:
 
 - fixed **Disable video ad repository** to use the actual Kotlin companion field (`Companion`) instead of the nonexistent `INSTANCE` field;
 - added a repeatable local Android launch smoke test that installs a candidate, cold-starts it, records full logcat and fails on process death or a fatal exception;
-- restored runtime quarantine for VK Video 1.164 until the signed candidate passes the local emulator and physical-device matrix.
+- restored runtime quarantine while diagnosing the crash, then cleared it after the signed candidate passed repeated Android 15 cold-start smoke tests;
+- established Android 13+ as the project's runtime release-gate baseline.
 
 ## 0.2.8 — 2026-10-02
 
