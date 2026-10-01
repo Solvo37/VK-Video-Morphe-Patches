@@ -224,7 +224,17 @@ internal object ClipSdkIntermediateListFingerprint : Fingerprint(
     classFingerprint = ClipSdkAdVideoMapperFingerprint,
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Ljava/util/ArrayList;",
-    parameters = listOf("Ljava/util/List;")
+    parameters = listOf("Ljava/util/List;"),
+    filters = listOf(
+        methodCall(
+            definingClass = "this",
+            parameters = listOf(
+                "Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;",
+                "Lcom/vk/clips/sdk/shared/api/routing/models/ClipFeedCacheInfo;"
+            ),
+            returnType = "Lcom/vk/clips/sdk/shared/feed/model/FeedItem\$d;"
+        )
+    )
 )
 
 // Dedicated runtime path that requests an in-player midroll.
