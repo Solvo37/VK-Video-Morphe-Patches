@@ -167,11 +167,22 @@ internal object ClipVideoFileAdsFeaturesParamsFingerprint : Fingerprint(
 // StaticAd / MarketAd / MyTarget DTOs become Clips SDK feed items.
 internal object ClipServerFeedMapperFingerprint : Fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
-    returnType = "L",
-    parameters = listOf(
-        "Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;",
-        "L"
-    )
+    filters = listOf(
+        methodCall(
+            definingClass = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;",
+            parameters = emptyList(),
+            returnType = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;"
+        ),
+        methodCall(
+            definingClass = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;",
+            parameters = emptyList(),
+            returnType = "Ljava/util/List;"
+        )
+    ),
+    custom = { method, _ ->
+        method.parameterTypes.size == 2 &&
+            method.parameterTypes[0] == "Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;"
+    }
 )
 
 // Runtime instream gate used by VideoAutoPlay before it switches the player
