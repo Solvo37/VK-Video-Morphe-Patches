@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.9 — 2026-10-02
+
+Confirmed startup-crash fix and local runtime validation:
+
+- fixed **Disable video ad repository** to use the actual Kotlin companion field (`Companion`) instead of the nonexistent `INSTANCE` field;
+- added a repeatable local Android launch smoke test that installs a candidate, cold-starts it, records full logcat and fails on process death or a fatal exception;
+- restored runtime quarantine for VK Video 1.164 until the signed candidate passes the local emulator and physical-device matrix.
+
 ## 0.2.8 — 2026-10-02
 
 Runtime stability hotfix for VK Video 1.164:
