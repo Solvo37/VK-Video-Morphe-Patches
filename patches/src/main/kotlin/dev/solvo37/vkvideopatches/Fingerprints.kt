@@ -268,6 +268,12 @@ internal object HomeShowcaseCatalogFactoryFingerprint : Fingerprint(
         "Lcom/vk/catalog2/common/dto/api/style/CatalogViewStyle;",
         "Lcom/vk/catalog2/common/dto/api/ui/UIBlock;",
         "L"
+    ),
+    filters = listOf(
+        methodCall(
+            definingClass = "Lcom/vk/catalog2/common/ui/mvp/configuration/a;",
+            name = "a"
+        )
     )
 )
 
