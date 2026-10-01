@@ -42,8 +42,6 @@ internal object DiscoverAdBannerFingerprint : Fingerprint(
 )
 
 internal object PixelStatsSingleFingerprint : Fingerprint(
-    definingClass = "Ltq/d;",
-    name = "a",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Lio/reactivex/rxjava3/disposables/c;",
     parameters = listOf("Ljava/lang/String;"),
@@ -56,8 +54,6 @@ internal object PixelStatsSingleFingerprint : Fingerprint(
 )
 
 internal object PixelStatsBatchFingerprint : Fingerprint(
-    definingClass = "Ltq/d;",
-    name = "b",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Lio/reactivex/rxjava3/disposables/c;",
     parameters = listOf("Ljava/lang/Iterable;"),
