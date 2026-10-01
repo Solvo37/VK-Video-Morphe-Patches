@@ -243,20 +243,33 @@ val filterClipServerFeedAdsPatch = bytecodePatch(
 
     execute {
         ClipServerFeedMapperFingerprint.method.apply {
-            // ee1.j.a() in VK Video 1.163 has 74 local registers plus two
-            // parameters. Filter the mutable API feed list before the original
-            // mapper converts ad DTOs into SDK items / install CTA buttons.
+            // The mapper class, method name and generated getter name move under
+            // R8 between VK Video releases. Resolve the two stable API calls
+            // from the matched method instead of hard-coding the 1.163 names.
             check(implementation!!.registerCount >= 6) {
                 "Clips feed mapper has insufficient local registers; fingerprint needs updating"
             }
 
+            val mapperReferences = implementation!!.instructions
+                .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
+
+            val responseFeedReference = mapperReferences.firstOrNull {
+                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;->") &&
+                    it.endsWith("()Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;")
+            } ?: error("ShortVideo recom feed getter was not found in Clips mapper")
+
+            val feedItemsReference = mapperReferences.firstOrNull {
+                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;->") &&
+                    it.endsWith("()Ljava/util/List;")
+            } ?: error("ShortVideo recom feed items getter was not found in Clips mapper")
+
             addInstructionsWithLabels(
                 0,
                 """
-                    invoke-virtual/range {p0 .. p0}, Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;->e()Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;
+                    invoke-virtual/range {p0 .. p0}, $responseFeedReference
                     move-result-object v0
 
-                    invoke-virtual {v0}, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;->b()Ljava/util/List;
+                    invoke-virtual {v0}, $feedItemsReference
                     move-result-object v0
 
                     invoke-interface {v0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
