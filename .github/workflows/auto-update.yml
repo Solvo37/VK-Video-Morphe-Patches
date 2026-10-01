@@ -101,7 +101,27 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y apksigner aapt zipalign jq unzip zip
+          sudo apt-get install -y jq unzip zip
+
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDKMANAGER" ]]; then
+            SDKMANAGER="$(command -v sdkmanager || true)"
+          fi
+          [[ -n "$SDKMANAGER" && -x "$SDKMANAGER" ]] || {
+            echo "::error::Android sdkmanager is not available on this runner."
+            exit 1
+          }
+
+          yes | "$SDKMANAGER" "build-tools;35.0.0" >/dev/null || true
+          BUILD_TOOLS="${ANDROID_HOME}/build-tools/35.0.0"
+          [[ -x "$BUILD_TOOLS/zipalign" && -x "$BUILD_TOOLS/apksigner" && -x "$BUILD_TOOLS/aapt" ]] || {
+            echo "::error::Android build-tools 35.0.0 were not installed."
+            exit 1
+          }
+
+          echo "$BUILD_TOOLS" >> "$GITHUB_PATH"
+          "$BUILD_TOOLS/zipalign" -h 2>&1 | grep -q -- '-P'
+          echo "Using Android build-tools 35.0.0 with 16 KiB zipalign support."
 
       - name: Resolve release baseline
         id: baseline
