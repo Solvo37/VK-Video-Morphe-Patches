@@ -120,7 +120,9 @@ jobs:
           }
 
           echo "$BUILD_TOOLS" >> "$GITHUB_PATH"
-          "$BUILD_TOOLS/zipalign" -h 2>&1 | grep -q -- '-P'
+          "$BUILD_TOOLS/zipalign" -h > zipalign-help.txt 2>&1 || true
+          grep -q -- '-P' zipalign-help.txt
+          rm -f zipalign-help.txt
           echo "Using Android build-tools 35.0.0 with 16 KiB zipalign support."
 
       - name: Resolve release baseline
