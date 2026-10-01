@@ -520,8 +520,8 @@ jobs:
           OUT="dist/VK-Video-${VERSION}-patched.apk"
           ALIGNED="dist/aligned-patched.apk"
 
-          zipalign -f 4 dist/unsigned-patched.apk "$ALIGNED"
-          zipalign -c 4 "$ALIGNED"
+          zipalign -P 16 -f 4 dist/unsigned-patched.apk "$ALIGNED"
+          zipalign -c -P 16 4 "$ALIGNED"
 
           apksigner sign             --ks signing.jks             --ks-pass env:STORE_PASSWORD             --ks-key-alias "$KEY_ALIAS"             --key-pass env:KEY_PASSWORD             --v1-signing-enabled false             --v2-signing-enabled false             --v3-signing-enabled true             --v4-signing-enabled false             --out "$OUT"             "$ALIGNED"
 
