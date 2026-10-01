@@ -1,6 +1,7 @@
 package dev.solvo37.vkvideopatches
 
 import app.morphe.patcher.Fingerprint
+import app.morphe.patcher.fieldAccess
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.AccessFlags
@@ -35,7 +36,6 @@ internal object InAppUpdateBootstrapFingerprint : Fingerprint(
 
 internal object DiscoverAdBannerFingerprint : Fingerprint(
     definingClass = "Lcom/vk/api/generated/video/dto/VideoDiscoverAdsDto;",
-    name = "b",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Ljava/lang/Boolean;",
     parameters = emptyList()
@@ -159,7 +159,6 @@ internal object ClipBannerCompanionProviderFingerprint : Fingerprint(
 
 internal object ClipVideoFileAdsFeaturesParamsFingerprint : Fingerprint(
     definingClass = "Lcom/vk/clips/viewer/impl/adapters/ClipVideoFileAdapter;",
-    name = "A3",
     returnType = "Lcom/vk/clips/sdk/models/ads/SdkClipsAdsFeaturesParams;",
     parameters = emptyList()
 )
@@ -167,13 +166,11 @@ internal object ClipVideoFileAdsFeaturesParamsFingerprint : Fingerprint(
 // VK Video 1.163 short-video server feed mapper. This is where server-side
 // StaticAd / MarketAd / MyTarget DTOs become Clips SDK feed items.
 internal object ClipServerFeedMapperFingerprint : Fingerprint(
-    definingClass = "Lee1/j;",
-    name = "a",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC, AccessFlags.FINAL),
-    returnType = "Lk01/d;",
+    returnType = "L",
     parameters = listOf(
         "Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;",
-        "Lve1/q;"
+        "L"
     )
 )
 
@@ -253,15 +250,13 @@ internal object InstreamNamedSectionStartFingerprint : Fingerprint(
 )
 // Home "For you" native MyTarget showcase card factory.
 internal object HomeShowcaseCatalogFactoryFingerprint : Fingerprint(
-    definingClass = "Lcom/vk/catalog2/common/ui/mvp/configuration/a;",
-    name = "E",
     returnType = "Lcom/vk/catalog2/common/ui/holders/api/CatalogViewHolder;",
     parameters = listOf(
         "Lcom/vk/catalog2/common/dto/api/CatalogDataType;",
         "Lcom/vk/catalog2/common/dto/api/CatalogViewType;",
         "Lcom/vk/catalog2/common/dto/api/style/CatalogViewStyle;",
         "Lcom/vk/catalog2/common/dto/api/ui/UIBlock;",
-        "Lai0/f;"
+        "L"
     )
 )
 
@@ -300,9 +295,13 @@ internal object VideoInstreamSectionsConstructorFingerprint : Fingerprint(
 // Profile menu data provider. This method only appends the "ad-free
 // subscription" promotional item to the "My" screen.
 internal object ProfileAdFreeMenuItemFingerprint : Fingerprint(
-    definingClass = "Lwc6/q;",
-    name = "i",
     returnType = "V",
-    parameters = listOf("Ljava/util/ArrayList;")
+    parameters = listOf("Ljava/util/ArrayList;"),
+    filters = listOf(
+        fieldAccess(
+            definingClass = "Lcom/vk/video/screens/profile/adapter/ProfileMenuItemType;",
+            name = "AD_FREE_SUBSCRIPTION"
+        )
+    )
 )
 
