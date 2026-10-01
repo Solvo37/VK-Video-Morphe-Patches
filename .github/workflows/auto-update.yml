@@ -28,7 +28,7 @@ permissions:
 
 concurrency:
   group: vk-video-auto-build
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   PACKAGE_NAME: com.vk.vkvideo
