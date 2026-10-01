@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.7 — 2026-10-01
+
+VK Видео 1.164 compatibility and remaining XML ad-surface cleanup:
+
+- hardened R8-sensitive fingerprints and derived obfuscated ad internals at patch time so the profile can follow VK Видео 1.164 without silently matching stale 1.163 names;
+- added targeted compatibility diagnostics to the auto-build failure artifact for future upstream changes;
+- added **Hide ad XML surfaces** for `catalog_ad_banner`, `catalog_ad_banner_medium`, `video_ad_banner` and portrait/landscape `video_player_ads_panel`;
+- XML layouts are kept structurally intact but their root view is forced to `gone` and `0dp × 0dp`, avoiding inflation / `findViewById` crashes that deleting the resource files could cause.
+
 ## 0.2.6 — 2026-09-23
 
 Profile cleanup after real-device validation of 1.163.5-rc1:
