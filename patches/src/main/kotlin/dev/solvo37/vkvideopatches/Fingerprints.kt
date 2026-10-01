@@ -184,6 +184,28 @@ internal object ClipServerFeedMapperFingerprint : Fingerprint(
     }
 )
 
+// VK Video 1.164 also maps the same response inside a shared synthetic
+// Function1 callback. The stable DTO calls identify that path without relying
+// on its R8-renamed class or switch discriminator.
+internal object ClipAlternateServerFeedMapperFingerprint : Fingerprint(
+    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
+    name = "invoke",
+    returnType = "Ljava/lang/Object;",
+    parameters = listOf("Ljava/lang/Object;"),
+    filters = listOf(
+        methodCall(
+            definingClass = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;",
+            parameters = emptyList(),
+            returnType = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;"
+        ),
+        methodCall(
+            definingClass = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;",
+            parameters = emptyList(),
+            returnType = "Ljava/util/List;"
+        )
+    )
+)
+
 // Runtime instream gate used by VideoAutoPlay before it switches the player
 // into the MIDROLL ad path.
 internal object MidrollRuntimeGateFingerprint : Fingerprint(
@@ -304,6 +326,24 @@ internal object VideoGetAdsResponseConstructorFingerprint : Fingerprint(
         "Lcom/vk/api/generated/video/dto/VideoVideoAdsSportDto;",
         "Lcom/vk/api/generated/video/dto/VideoVideoAdsMobileDto;",
         "Lcom/vk/api/generated/video/dto/VideoVideoAdsBannersDto;"
+    )
+)
+
+// Legacy per-video ad payload embedded directly in VideoVideoFullDto. This is
+// the source consumed by VideoFullToVideoFileMapper for ordinary-video
+// preroll/midroll playback, independently of VideoGetAdsResponseDto.
+internal object VideoAdsConstructorFingerprint : Fingerprint(
+    definingClass = "Lcom/vk/api/generated/video/dto/VideoAdsDto;",
+    name = "<init>",
+    returnType = "V",
+    parameters = listOf(
+        "I",
+        "Ljava/util/List;",
+        "F",
+        "Ljava/util/List;",
+        "Lcom/vk/api/generated/base/dto/BaseBoolIntDto;",
+        "Ljava/lang/Object;",
+        "Lcom/vk/api/generated/base/dto/BaseBoolIntDto;"
     )
 )
 

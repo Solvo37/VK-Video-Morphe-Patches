@@ -93,6 +93,24 @@ val removeVideoAdsPatch = bytecodePatch(
                 const/4 p3, 0x0
             """
         )
+
+        // Ordinary videos in 1.164 still carry a separate legacy ads object
+        // inside VideoVideoFullDto. Make that payload inert before the mapper
+        // can turn it into InstreamAd and start preroll playback.
+        VideoAdsConstructorFingerprint.method.addInstructions(
+            0,
+            """
+                const/4 p1, 0x0
+                invoke-static {}, Ljava/util/Collections;->emptyList()Ljava/util/List;
+                move-result-object p2
+                const/4 p3, 0x0
+                invoke-static {}, Ljava/util/Collections;->emptyList()Ljava/util/List;
+                move-result-object p4
+                sget-object p5, Lcom/vk/api/generated/base/dto/BaseBoolIntDto;->NO:Lcom/vk/api/generated/base/dto/BaseBoolIntDto;
+                const/4 p6, 0x0
+                sget-object p7, Lcom/vk/api/generated/base/dto/BaseBoolIntDto;->NO:Lcom/vk/api/generated/base/dto/BaseBoolIntDto;
+            """
+        )
     }
 }
 
@@ -312,6 +330,75 @@ val filterClipServerFeedAdsPatch = bytecodePatch(
                     :clip_remove_ad
                     invoke-interface {v1}, Ljava/util/Iterator;->remove()V
                     goto :clip_filter_loop
+                """,
+                ExternalLabel("original", getInstruction(0))
+            )
+        }
+
+        ClipAlternateServerFeedMapperFingerprint.method.apply {
+            check(implementation!!.registerCount >= 6) {
+                "Alternate Clips feed mapper has insufficient local registers"
+            }
+
+            val mapperReferences = implementation!!.instructions
+                .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
+
+            val responseFeedReference = mapperReferences.firstOrNull {
+                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;->") &&
+                    it.endsWith("()Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;")
+            } ?: error("Alternate Clips response feed getter was not found")
+
+            val feedItemsReference = mapperReferences.firstOrNull {
+                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;->") &&
+                    it.endsWith("()Ljava/util/List;")
+            } ?: error("Alternate Clips feed items getter was not found")
+
+            addInstructionsWithLabels(
+                0,
+                """
+                    instance-of v0, p1, Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;
+                    if-eqz v0, :original
+
+                    move-object v0, p1
+                    check-cast v0, Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;
+                    invoke-virtual {v0}, $responseFeedReference
+                    move-result-object v0
+
+                    invoke-virtual {v0}, $feedItemsReference
+                    move-result-object v0
+
+                    invoke-interface {v0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+                    move-result-object v1
+
+                    :alternate_clip_filter_loop
+                    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+                    move-result v2
+                    if-eqz v2, :original
+
+                    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+                    move-result-object v2
+
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoStaticAdDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMarketAdDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoFloatingAdDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkAdDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkStaticDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkVideoDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkCarouselDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkPromoDto;
+                    if-nez v3, :alternate_clip_remove_ad
+                    goto :alternate_clip_filter_loop
+
+                    :alternate_clip_remove_ad
+                    invoke-interface {v1}, Ljava/util/Iterator;->remove()V
+                    goto :alternate_clip_filter_loop
                 """,
                 ExternalLabel("original", getInstruction(0))
             )
