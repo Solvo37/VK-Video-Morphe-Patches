@@ -192,8 +192,6 @@ internal object MidrollRuntimeGateFingerprint : Fingerprint(
 // Lower Clips SDK converter. These fingerprints sit below the API response
 // mapper, so they also catch ads injected client-side after feed parsing.
 internal object ClipSdkAdVideoMapperFingerprint : Fingerprint(
-    definingClass = "Lr11/d;",
-    name = "g",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Lcom/vk/clips/sdk/shared/feed/model/FeedItem\$d;",
     parameters = listOf(
@@ -203,21 +201,19 @@ internal object ClipSdkAdVideoMapperFingerprint : Fingerprint(
 )
 
 internal object ClipSdkAdVideoDefaultMapperFingerprint : Fingerprint(
-    definingClass = "Lr11/d;",
-    name = "d",
+    classFingerprint = ClipSdkAdVideoMapperFingerprint,
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.STATIC),
     returnType = "Lcom/vk/clips/sdk/shared/feed/model/FeedItem\$d;",
     parameters = listOf(
-        "Lr11/d;",
+        "L",
         "Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;",
-        "Liz0/a;",
+        "L",
         "I"
     )
 )
 
 internal object ClipSdkIntermediateListFingerprint : Fingerprint(
-    definingClass = "Lr11/d;",
-    name = "f",
+    classFingerprint = ClipSdkAdVideoMapperFingerprint,
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Ljava/util/ArrayList;",
     parameters = listOf("Ljava/util/List;")
