@@ -388,6 +388,38 @@ jobs:
           python ci/verify_manifest.py dist/manifest-xmltree.txt
           python ci/verify_patched_apk.py             dist/unsigned-patched.apk             --json-out dist/static-gate.json
 
+      - name: Collect compatibility diagnostics
+        if: steps.decision.outputs.build == 'true' && steps.patch.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          rm -rf dist/compat-decode
+          mkdir -p dist/compat-diagnostics
+
+          "$JAVA_HOME/bin/java" -jar APKEditor.jar d \
+            -i dist/upstream-universal.apk \
+            -o dist/compat-decode >/dev/null 2>&1 || true
+
+          {
+            echo '=== request_midroll / midroll references ==='
+            grep -Rni -E -C 25 'request_midroll|"(midroll)"|AdSection;->MIDROLL|InstreamAdEngine' dist/compat-decode 2>/dev/null || true
+            echo
+            echo '=== known ad resource names ==='
+            grep -Rni -E -C 8 'catalog_ad_banner|video_player_ads_panel|video_ad_banner' dist/compat-decode 2>/dev/null || true
+          } > dist/compat-diagnostics/grep.txt
+
+          find dist/compat-decode -type f \( -name '*.smali' -o -name '*.xml' \) -print0 \
+            | xargs -0 grep -l -E 'request_midroll|AdSection;->MIDROLL|InstreamAdEngine|catalog_ad_banner|video_player_ads_panel|video_ad_banner' 2>/dev/null \
+            | sort > dist/compat-diagnostics/matching-files.txt || true
+
+          while IFS= read -r file; do
+            [[ -f "$file" ]] || continue
+            rel="${file#dist/compat-decode/}"
+            out="dist/compat-diagnostics/files/$rel"
+            mkdir -p "$(dirname "$out")"
+            cp "$file" "$out"
+          done < dist/compat-diagnostics/matching-files.txt
+
       - name: Open compatibility issue on gate failure
         if: steps.decision.outputs.build == 'true' && (steps.patch.outcome == 'failure' || steps.static_gate.outcome == 'failure')
         env:
@@ -536,6 +568,7 @@ jobs:
             dist/static-gate.json
             dist/final-gate.json
             dist/manifest-xmltree.txt
+            dist/compat-diagnostics/**
             dist/VK-Video-*-patched.sha256
             patches/build/libs/*.mpp
           if-no-files-found: warn
