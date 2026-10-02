@@ -415,7 +415,7 @@ val filterClipSdkAdsPatch = bytecodePatch(
 
     execute {
         ClipSdkVideoListMapperFingerprint.method.apply {
-            check(implementation!!.registerCount >= 7) {
+            check(implementation!!.registerCount >= 6) {
                 "Clips SDK video-list mapper has insufficient local registers"
             }
 
@@ -430,18 +430,18 @@ val filterClipSdkAdsPatch = bytecodePatch(
 
                     :sdk_video_filter_loop
                     invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
-                    move-result v2
-                    if-eqz v2, :sdk_video_filter_done
+                    move-result p1
+                    if-eqz p1, :sdk_video_filter_done
 
                     invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
-                    move-result-object v3
-                    check-cast v3, Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;
+                    move-result-object v2
+                    check-cast v2, Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;
 
-                    invoke-static {v3}, Lzz0/c;->c(Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;)Z
-                    move-result v4
-                    if-nez v4, :sdk_video_filter_loop
+                    invoke-static {v2}, Lzz0/c;->c(Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;)Z
+                    move-result p1
+                    if-nez p1, :sdk_video_filter_loop
 
-                    invoke-virtual {v0, v3}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+                    invoke-virtual {v0, v2}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
                     goto :sdk_video_filter_loop
 
                     :sdk_video_filter_done
