@@ -1,3 +1,10 @@
 {
-  "entries": []
+  "entries": [
+    {
+      "version_name": "1.164",
+      "version_code": 52379,
+      "release_tag": "1.164.3",
+      "reason": "User-confirmed crash when opening Clips in 1.164.3 and ordinary-video ads still present. Keep unpublished until mutable feed-copy and null VideoVideoFullDto.ads fixes pass runtime validation."
+    }
+  ]
 }

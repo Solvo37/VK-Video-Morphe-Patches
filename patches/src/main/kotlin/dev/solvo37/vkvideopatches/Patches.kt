@@ -111,6 +111,16 @@ val removeVideoAdsPatch = bytecodePatch(
                 sget-object p7, Lcom/vk/api/generated/base/dto/BaseBoolIntDto;->NO:Lcom/vk/api/generated/base/dto/BaseBoolIntDto;
             """
         )
+
+        // Fail closed at the object boundary as well. The ordinary-video
+        // mapper treats a null ads object as no InstreamAd at all.
+        VideoFullAdsGetterFingerprint.method.addInstructions(
+            0,
+            """
+                const/4 v0, 0x0
+                return-object v0
+            """
+        )
     }
 }
 
@@ -260,6 +270,33 @@ val filterClipServerFeedAdsPatch = bytecodePatch(
     compatibleWith(VK_VIDEO)
 
     execute {
+        // API deserializers may supply an immutable list. Both response
+        // mappers remove ad entries in-place, so own a mutable copy first.
+        ClipServerFeedConstructorFingerprint.method.apply {
+            val fieldReferences = implementation!!.instructions
+                .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
+            val itemsField = fieldReferences.firstOrNull {
+                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;->") &&
+                    it.endsWith(":Ljava/util/List;")
+            } ?: error("Clips feed items field was not found")
+            val pageAnchorField = fieldReferences.firstOrNull {
+                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;->") &&
+                    it.endsWith(":Ljava/lang/String;")
+            } ?: error("Clips feed page anchor field was not found")
+
+            addInstructions(
+                0,
+                """
+                    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+                    iput-object p2, p0, $pageAnchorField
+                    new-instance p2, Ljava/util/ArrayList;
+                    invoke-direct {p2, p1}, Ljava/util/ArrayList;-><init>(Ljava/util/Collection;)V
+                    iput-object p2, p0, $itemsField
+                    return-void
+                """
+            )
+        }
+
         ClipServerFeedMapperFingerprint.method.apply {
             // The mapper class, method name and generated getter name move under
             // R8 between VK Video releases. Resolve the two stable API calls

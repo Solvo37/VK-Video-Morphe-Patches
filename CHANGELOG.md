@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.12 — 2026-10-02
+
+Hotfix after real-account validation of 1.164.3:
+
+- copy the server Clips feed into a mutable `ArrayList` before removing ad entries, preventing the immediate crash caused by `Iterator.remove()` on an immutable response list;
+- force `VideoVideoFullDto.ads` to return `null`, preventing the ordinary-video mapper from constructing any `InstreamAd` even when a legacy ad payload is present;
+- quarantine the candidate until the rebuilt DEX and Android runtime are verified locally.
+
 ## 0.2.11 — 2026-10-02
 
 Completeness fixes for ordinary-video and Clips advertising paths in VK Video 1.164:

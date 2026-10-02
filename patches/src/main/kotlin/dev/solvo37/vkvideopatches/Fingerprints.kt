@@ -206,6 +206,13 @@ internal object ClipAlternateServerFeedMapperFingerprint : Fingerprint(
     )
 )
 
+internal object ClipServerFeedConstructorFingerprint : Fingerprint(
+    definingClass = "Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;",
+    name = "<init>",
+    returnType = "V",
+    parameters = listOf("Ljava/util/List;", "Ljava/lang/String;")
+)
+
 // Runtime instream gate used by VideoAutoPlay before it switches the player
 // into the MIDROLL ad path.
 internal object MidrollRuntimeGateFingerprint : Fingerprint(
@@ -345,6 +352,12 @@ internal object VideoAdsConstructorFingerprint : Fingerprint(
         "Ljava/lang/Object;",
         "Lcom/vk/api/generated/base/dto/BaseBoolIntDto;"
     )
+)
+
+internal object VideoFullAdsGetterFingerprint : Fingerprint(
+    definingClass = "Lcom/vk/api/generated/video/dto/VideoVideoFullDto;",
+    returnType = "Lcom/vk/api/generated/video/dto/VideoAdsDto;",
+    parameters = emptyList()
 )
 
 internal object VideoInstreamSectionsConstructorFingerprint : Fingerprint(
