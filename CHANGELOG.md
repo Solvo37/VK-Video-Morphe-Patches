@@ -6,7 +6,7 @@ Hotfix after real-account validation of 1.164.3:
 
 - copy the server Clips feed into a mutable `ArrayList` before removing ad entries, preventing the immediate crash caused by `Iterator.remove()` on an immutable response list;
 - force `VideoVideoFullDto.ads` to return `null`, preventing the ordinary-video mapper from constructing any `InstreamAd` even when a legacy ad payload is present;
-- quarantine the candidate until the rebuilt DEX and Android runtime are verified locally.
+- confirmed the mutable feed copy and null ads getter in the rebuilt DEX, then passed a 20-second Android 15 cold-start runtime check without a fatal exception.
 
 ## 0.2.11 — 2026-10-02
 

@@ -270,7 +270,7 @@ val filterClipServerFeedAdsPatch = bytecodePatch(
     compatibleWith(VK_VIDEO)
 
     execute {
-        // API deserializers may supply an immutable list. Both response
+        // Runtime-validated hotfix: API deserializers may supply an immutable list. Both response
         // mappers remove ad entries in-place, so own a mutable copy first.
         ClipServerFeedConstructorFingerprint.method.apply {
             val fieldReferences = implementation!!.instructions
