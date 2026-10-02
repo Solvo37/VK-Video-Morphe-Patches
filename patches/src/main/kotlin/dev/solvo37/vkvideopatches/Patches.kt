@@ -414,6 +414,43 @@ val filterClipSdkAdsPatch = bytecodePatch(
     compatibleWith(VK_VIDEO)
 
     execute {
+        ClipSdkVideoListMapperFingerprint.method.apply {
+            check(implementation!!.registerCount >= 7) {
+                "Clips SDK video-list mapper has insufficient local registers"
+            }
+
+            addInstructionsWithLabels(
+                0,
+                """
+                    new-instance v0, Ljava/util/ArrayList;
+                    invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
+
+                    invoke-interface {p1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+                    move-result-object v1
+
+                    :sdk_video_filter_loop
+                    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+                    move-result v2
+                    if-eqz v2, :sdk_video_filter_done
+
+                    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+                    move-result-object v3
+                    check-cast v3, Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;
+
+                    invoke-static {v3}, Lzz0/c;->c(Lcom/vk/clips/sdk/shared/api/deps/video/SdkVideoFile;)Z
+                    move-result v4
+                    if-nez v4, :sdk_video_filter_loop
+
+                    invoke-virtual {v0, v3}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+                    goto :sdk_video_filter_loop
+
+                    :sdk_video_filter_done
+                    move-object p1, v0
+                """,
+                ExternalLabel("original", getInstruction(0))
+            )
+        }
+
         ClipSdkIntermediateListFingerprint.method.apply {
             check(implementation!!.registerCount >= 7) {
                 "Clips SDK list mapper has insufficient local registers"
