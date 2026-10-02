@@ -5,7 +5,7 @@
 Authenticated Clips ad-path fix:
 
 - identified full-screen install/try-now ads embedded as ordinary `SdkVideoFile` entries carrying `SdkVideoAdInfo` or ORD metadata;
-- filter those video entries from the primary Clips SDK list before they become rendered `FeedItem` objects;
+- reject those video entries in the nullable per-item Clips SDK mapper before they become rendered `FeedItem` objects;
 - keep the verified safe mapper boundary and avoid mutating the shared raw API response.
 
 ## 0.2.13 — 2026-10-02

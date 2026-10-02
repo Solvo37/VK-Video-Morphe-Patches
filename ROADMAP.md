@@ -2,7 +2,7 @@
 
 ## P0 — runtime confidence
 
-- Validate the new `SdkVideoFile` ad filter across a long authenticated Clips session; the 1.164.4 entry crash is reproduced, diagnosed and fixed.
+- Validate the new nullable per-item `SdkVideoFile` ad filter across a long authenticated Clips session; the 1.164.4 entry crash is reproduced, diagnosed and fixed.
 - Verify ordinary playback with PREROLL, MIDROLL and POSTROLL denied: no ad countdown and no ad-driven timeline jump.
 - Add Android 13 (API 33) and Android 14 (API 34) Google Play profiles to the local release-gate matrix alongside Android 15.
 - Run the signed candidate on at least one physical ARM64 device running Android 13 or newer.
