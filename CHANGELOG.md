@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.13 — 2026-10-02
+
+Runtime correction after real-account validation of 1.164.4:
+
+- fixed the instream runtime gate: its positive result means “may start ad”, so the old MIDROLL branch accidentally allowed advertising; the gate now denies PREROLL, MIDROLL and POSTROLL;
+- removed mutation of the raw Clips response from the shared synthetic callback, which was introduced immediately before the Clips-entry crash;
+- retained complete-entry filtering in the dedicated server mapper and lower Clips SDK converter;
+- quarantined 1.164.4 until the rebuilt signed APK passes an authenticated Clips and ordinary-video playback test.
+
 ## 0.2.12 — 2026-10-02
 
 Hotfix after real-account validation of 1.164.3:

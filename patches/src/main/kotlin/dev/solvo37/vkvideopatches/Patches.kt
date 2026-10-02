@@ -372,76 +372,10 @@ val filterClipServerFeedAdsPatch = bytecodePatch(
             )
         }
 
-        // Required in 1.164: this is a second live feed conversion path, not
-        // merely a duplicate generated method.
-        ClipAlternateServerFeedMapperFingerprint.method.apply {
-            check(implementation!!.registerCount >= 6) {
-                "Alternate Clips feed mapper has insufficient local registers"
-            }
-
-            val mapperReferences = implementation!!.instructions
-                .mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
-
-            val responseFeedReference = mapperReferences.firstOrNull {
-                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;->") &&
-                    it.endsWith("()Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;")
-            } ?: error("Alternate Clips response feed getter was not found")
-
-            val feedItemsReference = mapperReferences.firstOrNull {
-                it.startsWith("Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedDto;->") &&
-                    it.endsWith("()Ljava/util/List;")
-            } ?: error("Alternate Clips feed items getter was not found")
-
-            addInstructionsWithLabels(
-                0,
-                """
-                    instance-of v0, p1, Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;
-                    if-eqz v0, :original
-
-                    move-object v0, p1
-                    check-cast v0, Lcom/vk/api/generated/shortVideo/dto/ShortVideoGetRecomResponseDto;
-                    invoke-virtual {v0}, $responseFeedReference
-                    move-result-object v0
-
-                    invoke-virtual {v0}, $feedItemsReference
-                    move-result-object v0
-
-                    invoke-interface {v0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
-                    move-result-object v1
-
-                    :alternate_clip_filter_loop
-                    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
-                    move-result v2
-                    if-eqz v2, :original
-
-                    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
-                    move-result-object v2
-
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoStaticAdDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMarketAdDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoFloatingAdDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkAdDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkStaticDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkVideoDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkCarouselDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    instance-of v3, v2, Lcom/vk/api/generated/shortVideo/dto/ShortVideoRecomFeedItemDto${'$'}ShortVideoFeedItemShortVideoMytargetSdkPromoDto;
-                    if-nez v3, :alternate_clip_remove_ad
-                    goto :alternate_clip_filter_loop
-
-                    :alternate_clip_remove_ad
-                    invoke-interface {v1}, Ljava/util/Iterator;->remove()V
-                    goto :alternate_clip_filter_loop
-                """,
-                ExternalLabel("original", getInstruction(0))
-            )
-        }
+        // Do not mutate the API response in the shared synthetic Function1.
+        // That callback has additional consumers which assume the original
+        // response shape and crashed when opening Clips. Ads are filtered in
+        // the dedicated mapper above and in the lower SDK conversion patch.
     }
 }
 
@@ -455,22 +389,16 @@ val blockMidrollRuntimeAdsPatch = bytecodePatch(
 
     execute {
         MidrollRuntimeGateFingerprint.method.apply {
-            // x13.e.b() has five locals in 1.163. Return the same positive gate
-            // result that VideoAutoPlay interprets as 'do not start this ad'.
-            check(implementation!!.registerCount >= 4) {
-                "Midroll gate has no safe local register; fingerprint needs updating"
-            }
-
-            addInstructionsWithLabels(
+            // This method is a positive "may start" gate. Returning true here
+            // used to enable the MIDROLL branch instead of blocking it. Deny
+            // every instream section so preroll/postroll cannot move the main
+            // player's timeline either.
+            addInstructions(
                 0,
                 """
-                    sget-object v0, Lcom/vk/dto/common/AdSection;->MIDROLL:Lcom/vk/dto/common/AdSection;
-                    if-ne p1, v0, :original
-
-                    const/4 v0, 0x1
+                    const/4 v0, 0x0
                     return v0
-                """,
-                ExternalLabel("original", getInstruction(0))
+                """
             )
         }
     }

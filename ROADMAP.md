@@ -2,6 +2,8 @@
 
 ## P0 — runtime confidence
 
+- Reproduce and capture the authenticated Clips-entry crash from release 1.164.4; validate that removing raw-response mutation fixes it before promotion.
+- Verify ordinary playback with PREROLL, MIDROLL and POSTROLL denied: no ad countdown and no ad-driven timeline jump.
 - Add Android 13 (API 33) and Android 14 (API 34) Google Play profiles to the local release-gate matrix alongside Android 15.
 - Run the signed candidate on at least one physical ARM64 device running Android 13 or newer.
 - Extend the smoke test beyond process survival: verify Home, Clips, ordinary video, profile, background/foreground and rotation.
@@ -9,8 +11,8 @@
 
 ## P1 — ad removal correctness
 
-- Validate the newly blocked legacy ordinary-video `VideoAdsDto` path against real signed-in playback sessions and future upstream versions.
-- Validate Clips for long scrolling sessions after both server response mappers were patched; confirm there are no ads or empty feed positions.
+- Validate the blocked legacy ordinary-video `VideoAdsDto` and instream gate against real signed-in playback sessions and future upstream versions.
+- Validate Clips for long scrolling sessions after dedicated server and SDK-layer filtering; confirm there are no ads, crashes or empty feed positions.
 - Recheck server-provided StaticAd, MarketAd, FloatingAd and MyTarget variants against every new upstream version.
 - Add runtime assertions that ad filtering removes complete feed entries instead of leaving empty adapter positions.
 
