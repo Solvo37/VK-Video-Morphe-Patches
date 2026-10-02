@@ -1,5 +1,5 @@
 {
-  "version": "0.2.12",
+  "version": "0.2.13",
   "patches": [
     "Fix install conflict with stock VK",
     "Bypass native signature check",
