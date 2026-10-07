@@ -111,7 +111,7 @@ public final class VkleanSettingsActivity extends Activity {
         }
 
         TextView note = text(
-                "Это каркас VKlean Settings. Реальные переключатели будут появляться здесь по мере добавления патчей.",
+                "VKlean Settings готов к runtime-настройкам. Первый рабочий пункт — постоянная скорость воспроизведения.",
                 13f,
                 secondary,
                 Typeface.NORMAL
@@ -168,7 +168,7 @@ public final class VkleanSettingsActivity extends Activity {
         }
 
         TextView note = text(
-                "Пункты пока только размечены. Следующим шагом каждый из них получит настоящий runtime-переключатель или выбор значения.",
+                "Остальные пункты пока размечены как будущие функции и будут подключаться к этому же экрану.",
                 13f,
                 secondary,
                 Typeface.NORMAL
