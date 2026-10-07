@@ -59,26 +59,38 @@ private val amoledThemeResourcesPatch = resourcePatch {
             )
         }
 
-        val values = get("res").resolve("values")
-        if (!values.isDirectory && !values.mkdirs()) {
-            throw PatchException("AMOLED theme: could not create res/values")
-        }
+        document("res/values/styles.xml").use { xml ->
+            val resources = xml.documentElement
+                ?: throw PatchException("AMOLED theme: styles.xml has no resources root")
 
-        val overlay = buildString {
-            appendLine("<resources>")
-            appendLine("  <style name=\"$AMOLED_STYLE\">")
-            appendLine("    <item name=\"android:windowBackground\">@color/vk_black</item>")
-            appendLine("    <item name=\"android:colorBackground\">@color/vk_black</item>")
-            appendLine("    <item name=\"android:statusBarColor\">@color/vk_black</item>")
-            appendLine("    <item name=\"android:navigationBarColor\">@color/vk_black</item>")
-            AMOLED_ATTRIBUTES.forEach { (name, value) ->
-                appendLine("    <item name=\"$name\">$value</item>")
+            val duplicate = (0 until xml.getElementsByTagName("style").length)
+                .mapNotNull { xml.getElementsByTagName("style").item(it) as? Element }
+                .any { it.getAttribute("name") == AMOLED_STYLE }
+            if (duplicate) {
+                throw PatchException("AMOLED theme: $AMOLED_STYLE already exists")
             }
-            appendLine("  </style>")
-            appendLine("</resources>")
-        }
 
-        values.resolve("vklean_amoled.xml").writeText(overlay)
+            val style = xml.createElement("style").apply {
+                setAttribute("name", AMOLED_STYLE)
+            }
+
+            fun addItem(name: String, value: String) {
+                style.appendChild(
+                    xml.createElement("item").apply {
+                        setAttribute("name", name)
+                        textContent = value
+                    }
+                )
+            }
+
+            addItem("android:windowBackground", "@color/vk_black")
+            addItem("android:colorBackground", "@color/vk_black")
+            addItem("android:statusBarColor", "@color/vk_black")
+            addItem("android:navigationBarColor", "@color/vk_black")
+            AMOLED_ATTRIBUTES.forEach { (name, value) -> addItem(name, value) }
+
+            resources.appendChild(style)
+        }
     }
 }
 
