@@ -60,6 +60,7 @@ public final class VkleanSettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        VkleanPreferences.initialize(this);
         configureTheme();
 
         String section = getIntent().getStringExtra(EXTRA_SECTION);
@@ -148,7 +149,12 @@ public final class VkleanSettingsActivity extends Activity {
         page.addView(cardView, cardParams);
 
         for (int i = 0; i < entries.length; i++) {
-            cardView.addView(plannedRow(entries[i]));
+            if ("Воспроизведение".equals(section)
+                    && "Скорость воспроизведения".equals(entries[i])) {
+                cardView.addView(playbackSpeedRow());
+            } else {
+                cardView.addView(plannedRow(entries[i]));
+            }
             if (i != entries.length - 1) {
                 View line = new View(this);
                 line.setBackgroundColor(divider);
@@ -221,6 +227,76 @@ public final class VkleanSettingsActivity extends Activity {
         params.bottomMargin = dp(10);
         row.setLayoutParams(params);
         return row;
+    }
+
+    private View playbackSpeedRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(16), dp(12), dp(12), dp(12));
+        row.setMinimumHeight(dp(64));
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(v -> showPlaybackSpeedDialog());
+
+        TextView name = text("Скорость воспроизведения", 15f, primary, Typeface.NORMAL);
+        row.addView(name, matchWrap());
+
+        TextView value = text(
+                playbackSpeedLabel(VkleanPreferences.playbackSpeed()),
+                13f,
+                accent,
+                Typeface.BOLD
+        );
+        LinearLayout.LayoutParams valueParams = matchWrap();
+        valueParams.topMargin = dp(4);
+        row.addView(value, valueParams);
+
+        return row;
+    }
+
+    private void showPlaybackSpeedDialog() {
+        final String[] labels = new String[]{
+                "Как в VK Видео",
+                "0.5×",
+                "0.75×",
+                "1×",
+                "1.25×",
+                "1.5×",
+                "1.75×",
+                "2×"
+        };
+        final float[] values = new float[]{
+                0f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f
+        };
+
+        float current = VkleanPreferences.playbackSpeed();
+        int selected = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (Math.abs(values[i] - current) < 0.001f) {
+                selected = i;
+                break;
+            }
+        }
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Скорость воспроизведения")
+                .setSingleChoiceItems(labels, selected, (dialog, which) -> {
+                    VkleanPreferences.setPlaybackSpeed(this, values[which]);
+                    dialog.dismiss();
+                    recreate();
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private String playbackSpeedLabel(float value) {
+        if (value <= 0f) return "Как в VK Видео";
+        if (Math.abs(value - Math.round(value)) < 0.001f) {
+            return ((int) value) + "×";
+        }
+        String raw = Float.toString(value);
+        return raw + "×";
     }
 
     private View plannedRow(String title) {
