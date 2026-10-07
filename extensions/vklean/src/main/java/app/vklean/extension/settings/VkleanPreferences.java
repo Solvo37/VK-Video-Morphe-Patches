@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 public final class VkleanPreferences {
     private static final String FILE = "vklean_settings";
     private static final String KEY_PLAYBACK_SPEED = "playback_speed";
+    private static final String KEY_AMOLED_THEME = "amoled_theme";
     private static volatile SharedPreferences preferences;
 
     private VkleanPreferences() {}
@@ -31,6 +32,18 @@ public final class VkleanPreferences {
         SharedPreferences prefs = preferences;
         if (prefs == null) return;
         prefs.edit().putFloat(KEY_PLAYBACK_SPEED, speed).apply();
+    }
+
+    public static boolean amoledTheme() {
+        SharedPreferences prefs = preferences;
+        return prefs != null && prefs.getBoolean(KEY_AMOLED_THEME, false);
+    }
+
+    public static void setAmoledTheme(Context context, boolean enabled) {
+        initialize(context);
+        SharedPreferences prefs = preferences;
+        if (prefs == null) return;
+        prefs.edit().putBoolean(KEY_AMOLED_THEME, enabled).apply();
     }
 
     public static Float overridePlaybackSpeed(Float original) {
