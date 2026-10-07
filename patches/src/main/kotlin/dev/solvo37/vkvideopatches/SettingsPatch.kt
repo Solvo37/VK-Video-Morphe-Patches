@@ -77,7 +77,7 @@ val vkleanSettingsPatch = bytecodePatch(
         MainActivityOnCreateFingerprint.method.addInstructions(
             0,
             """
-                invoke-static {p0}, $SETTINGS_BRIDGE->initialize(Landroid/content/Context;)V
+                invoke-static/range {p0 .. p0}, $SETTINGS_BRIDGE->initialize(Landroid/content/Context;)V
             """
         )
 
