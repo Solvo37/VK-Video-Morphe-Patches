@@ -17,6 +17,15 @@ private const val SETTINGS_BRIDGE =
     "Lapp/vklean/extension/settings/SettingsBridge;"
 private const val SETTINGS_ACTIVITY =
     "app.vklean.extension.settings.VkleanSettingsActivity"
+private const val MAIN_ACTIVITY =
+    "Lcom/vk/video/screens/main/MainActivity;"
+
+internal object MainActivityOnCreateFingerprint : Fingerprint(
+    definingClass = MAIN_ACTIVITY,
+    name = "onCreate",
+    returnType = "V",
+    parameters = listOf("Landroid/os/Bundle;")
+)
 
 internal object VideoUserSettingsOnCreateViewFingerprint : Fingerprint(
     definingClass = VK_SETTINGS_FRAGMENT,
@@ -65,6 +74,13 @@ val vkleanSettingsPatch = bytecodePatch(
     extendWith("extensions/vklean.mpe")
 
     execute {
+        MainActivityOnCreateFingerprint.method.addInstructions(
+            0,
+            """
+                invoke-static {p0}, $SETTINGS_BRIDGE->initialize(Landroid/content/Context;)V
+            """
+        )
+
         VideoUserSettingsOnCreateViewFingerprint.method.apply {
             val implementation = implementation
                 ?: throw PatchException("VKlean settings: settings onCreateView has no implementation.")
