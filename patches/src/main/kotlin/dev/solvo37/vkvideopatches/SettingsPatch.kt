@@ -8,6 +8,8 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import dev.solvo37.vkvideopatches.Constants.VK_VIDEO
 import org.w3c.dom.Element
 
@@ -19,11 +21,11 @@ private const val THEME_OVERRIDE =
     "Lapp/vklean/extension/settings/ThemeOverride;"
 private const val SETTINGS_ACTIVITY =
     "app.vklean.extension.settings.VkleanSettingsActivity"
-private const val MAIN_ACTIVITY =
-    "Lcom/vk/video/screens/main/MainActivity;"
+private const val THEMABLE_ACTIVITY =
+    "Lcom/vk/core/ui/themes/ThemableActivity;"
 
-internal object MainActivityOnCreateFingerprint : Fingerprint(
-    definingClass = MAIN_ACTIVITY,
+internal object ThemableActivityOnCreateFingerprint : Fingerprint(
+    definingClass = THEMABLE_ACTIVITY,
     name = "onCreate",
     returnType = "V",
     parameters = listOf("Landroid/os/Bundle;")
@@ -76,13 +78,30 @@ val vkleanSettingsPatch = bytecodePatch(
     extendWith("extensions/vklean.mpe")
 
     execute {
-        MainActivityOnCreateFingerprint.method.addInstructions(
-            0,
-            """
-                invoke-static/range {p0 .. p0}, $SETTINGS_BRIDGE->initialize(Landroid/content/Context;)V
-                invoke-static/range {p0 .. p0}, $THEME_OVERRIDE->apply(Landroid/app/Activity;)V
-            """
-        )
+        ThemableActivityOnCreateFingerprint.method.apply {
+            val implementation = implementation
+                ?: throw PatchException("VKlean settings: ThemableActivity.onCreate has no implementation.")
+
+            val superOnCreateIndex = implementation.instructions.indexOfFirst { instruction ->
+                if (instruction.opcode != Opcode.INVOKE_SUPER) return@indexOfFirst false
+                val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                    ?: return@indexOfFirst false
+                reference.name == "onCreate" &&
+                    reference.returnType == "V" &&
+                    reference.parameterTypes == listOf("Landroid/os/Bundle;")
+            }
+            if (superOnCreateIndex < 0) {
+                throw PatchException("VKlean settings: ThemableActivity super.onCreate was not found.")
+            }
+
+            addInstructions(
+                superOnCreateIndex + 1,
+                """
+                    invoke-static/range {p0 .. p0}, $SETTINGS_BRIDGE->initialize(Landroid/content/Context;)V
+                    invoke-static/range {p0 .. p0}, $THEME_OVERRIDE->apply(Landroid/app/Activity;)V
+                """
+            )
+        }
 
         VideoUserSettingsOnCreateViewFingerprint.method.apply {
             val implementation = implementation
