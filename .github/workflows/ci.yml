@@ -72,7 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gradle :patches:buildAndroid --no-daemon
 
-      - name: Diagnose VK Video dark theme stack
+      - name: Diagnose VK Video theme providers
         run: |
           set -euo pipefail
 
@@ -95,14 +95,11 @@ jobs:
 
           mkdir -p /tmp/vklean-theme/diag
 
-          find /tmp/vklean-theme/decode -type f \
-            \( -path '*/res/values*/colors.xml' -o -path '*/res/values*/styles.xml' -o -path '*/res/values*/themes.xml' \) \
-            -print | sort > /tmp/vklean-theme/diag/resource-files.txt
-
-          grep -RIl -E \
-            'ThemeHelper|ThemeManager|ColorScheme|ColorPalette|DarkTheme|NightMode|isDark|isNight|VKTheme|VKUI|vkui|backgroundColor|surfaceColor' \
-            /tmp/vklean-theme/decode/smali* 2>/dev/null \
-            | sort | head -n 300 > /tmp/vklean-theme/diag/smali-files.txt || true
+          find /tmp/vklean-theme/decode -type f -name '*.smali' \
+            \( -path '*/com/vk/core/ui/themes/*' \
+               -o -path '*/com/vk/sdk/clips/theme/*' \
+               -o -path '*/com/vk/clips/sdk/shared/api/ui/*' \) \
+            -print | sort > /tmp/vklean-theme/diag/theme-files.txt
 
           while IFS= read -r file; do
             [[ -f "$file" ]] || continue
@@ -110,24 +107,21 @@ jobs:
             out="/tmp/vklean-theme/diag/files/${rel}"
             mkdir -p "$(dirname "$out")"
             cp "$file" "$out"
-          done < /tmp/vklean-theme/diag/smali-files.txt
+          done < /tmp/vklean-theme/diag/theme-files.txt
 
-          for file in $(cat /tmp/vklean-theme/diag/resource-files.txt); do
-            rel="${file#/tmp/vklean-theme/decode/}"
-            out="/tmp/vklean-theme/diag/resources/${rel}"
-            mkdir -p "$(dirname "$out")"
-            cp "$file" "$out"
-          done
+          cp /tmp/vklean-theme/decode/resources/package_1/res/values/colors.xml \
+            /tmp/vklean-theme/diag/colors.xml
+          cp /tmp/vklean-theme/decode/resources/package_1/res/values-night/colors.xml \
+            /tmp/vklean-theme/diag/colors-night.xml
+          cp /tmp/vklean-theme/decode/resources/package_1/res/values-night/styles.xml \
+            /tmp/vklean-theme/diag/styles-night.xml
 
-          grep -Rni -E \
-            '#(0[0-9a-fA-F]{5}|1[0-9a-fA-F]{5}|2[0-9a-fA-F]{5}|FF0[0-9a-fA-F]{5}|FF1[0-9a-fA-F]{5}|FF2[0-9a-fA-F]{5})|name="[^"]*(background|surface|modal|sheet|panel|content)[^"]*"' \
-            /tmp/vklean-theme/diag/resources 2>/dev/null \
-            > /tmp/vklean-theme/diag/dark-colors.txt || true
+          echo "Theme files: $(wc -l < /tmp/vklean-theme/diag/theme-files.txt)"
 
-      - name: Upload dark theme diagnostics
+      - name: Upload theme provider diagnostics
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: vklean-dark-theme-diagnostics
+          name: vklean-theme-provider-diagnostics
           path: /tmp/vklean-theme/diag/**
           if-no-files-found: error
 
