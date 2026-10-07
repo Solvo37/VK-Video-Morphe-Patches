@@ -1,18 +1,12 @@
 package app.vklean.extension.settings;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Build;
-import android.os.Bundle;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unused")
 public final class ThemeOverride {
     private static final String STYLE_NAME = "VKleanAmoledOverlay";
-    private static final AtomicBoolean INSTALLED = new AtomicBoolean(false);
 
     private ThemeOverride() {}
 
@@ -31,32 +25,10 @@ public final class ThemeOverride {
         return isAvailable(context) && isDark(context) && VkleanPreferences.amoledTheme();
     }
 
-    public static void install(Context context) {
-        if (context == null) return;
-        Context appContext = context.getApplicationContext();
-        if (!(appContext instanceof Application)) return;
-        if (!INSTALLED.compareAndSet(false, true)) return;
-
-        ((Application) appContext).registerActivityLifecycleCallbacks(
-                new Application.ActivityLifecycleCallbacks() {
-                    @Override
-                    public void onActivityPreCreated(Activity activity, Bundle state) {
-                        if (Build.VERSION.SDK_INT >= 29) {
-                            apply(activity);
-                        }
-                    }
-
-                    @Override public void onActivityCreated(Activity activity, Bundle state) {}
-                    @Override public void onActivityStarted(Activity activity) {}
-                    @Override public void onActivityResumed(Activity activity) {}
-                    @Override public void onActivityPaused(Activity activity) {}
-                    @Override public void onActivityStopped(Activity activity) {}
-                    @Override public void onActivitySaveInstanceState(Activity activity, Bundle state) {}
-                    @Override public void onActivityDestroyed(Activity activity) {}
-                }
-        );
-    }
-
+    /**
+     * Called from VK's ThemableActivity after VK has chosen and applied its normal theme,
+     * but before the concrete screen continues its own onCreate().
+     */
     public static void apply(Activity activity) {
         if (activity == null || !isActive(activity)) return;
 
