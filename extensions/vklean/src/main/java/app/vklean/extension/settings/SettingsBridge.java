@@ -3,7 +3,6 @@ package app.vklean.extension.settings;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.View;
@@ -24,7 +23,8 @@ public final class SettingsBridge {
         if (content == null) return null;
 
         final Context context = content.getContext();
-        final boolean dark = isDark(context);
+        final boolean dark = ThemeOverride.isDark(context);
+        final boolean amoled = ThemeOverride.isActive(context);
 
         LinearLayout root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -32,7 +32,7 @@ public final class SettingsBridge {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
-        root.setBackgroundColor(dark ? 0xFF19191A : 0xFFFFFFFF);
+        root.setBackgroundColor(amoled ? 0xFF000000 : (dark ? 0xFF19191A : 0xFFFFFFFF));
 
         LinearLayout entry = new LinearLayout(context);
         entry.setOrientation(LinearLayout.VERTICAL);
@@ -72,7 +72,7 @@ public final class SettingsBridge {
         ));
 
         View divider = new View(context);
-        divider.setBackgroundColor(dark ? 0xFF2C2C2E : 0xFFE8E8EA);
+        divider.setBackgroundColor(amoled ? 0xFF202020 : (dark ? 0xFF2C2C2E : 0xFFE8E8EA));
         root.addView(divider, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 dp(context, 1)
@@ -97,12 +97,6 @@ public final class SettingsBridge {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         context.startActivity(intent);
-    }
-
-    private static boolean isDark(Context context) {
-        int night = context.getResources().getConfiguration().uiMode
-                & Configuration.UI_MODE_NIGHT_MASK;
-        return night == Configuration.UI_MODE_NIGHT_YES;
     }
 
     static int dp(Context context, int value) {
