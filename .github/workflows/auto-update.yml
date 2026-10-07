@@ -14,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'patches/**'
+      - 'extensions/**'
       - 'ci/**'
       - 'gradle/**'
       - 'settings.gradle.kts'
@@ -71,7 +72,7 @@ jobs:
 
             if [[ -n "$BEFORE" && "$BEFORE" != "$ZERO" ]]; then
               FILES="$(gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE...$GITHUB_SHA" --jq '.files[].filename')"
-              if grep -Eq '^(patches/|gradle\.properties$|patches-list\.json$)' <<< "$FILES"; then
+              if grep -Eq '^(patches/|extensions/|gradle\.properties$|patches-list\.json$)' <<< "$FILES"; then
                 CHANGED=true
               fi
             fi
@@ -420,7 +421,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          "$JAVA_HOME/bin/java" -jar morphe.jar patch             -p "$MPP"             --force             --exclusive             -e "Fix install conflict with stock VK"             -e "Bypass native signature check"             -e "Disable in-app update"             -e "Remove video ads"             -e "Remove clip ads"             -e "Filter clip feed ads"             -e "Block midroll ads"             -e "Filter Clips SDK ads"             -e "Block deep midroll ads"             -e "Hide home showcase ads"             -e "Disable video ad repository"             -e "Disable ad-free subscription promo"             -e "Hide promoted banner content"             -e "Disable ad pixel tracking"             --bytecode-mode STRIP_FAST             --unsigned             -r dist/patch-result.json             -o dist/unsigned-patched.apk             dist/upstream-universal.apk
+          "$JAVA_HOME/bin/java" -jar morphe.jar patch             -p "$MPP"             --force             --exclusive             -e "Fix install conflict with stock VK"             -e "Bypass native signature check"             -e "Disable in-app update"             -e "Remove video ads"             -e "Remove clip ads"             -e "Filter clip feed ads"             -e "Block midroll ads"             -e "Filter Clips SDK ads"             -e "Block deep midroll ads"             -e "Hide home showcase ads"             -e "Disable video ad repository"             -e "Disable ad-free subscription promo"             -e "Hide promoted banner content"             -e "Disable ad pixel tracking"             -e "VKlean settings"             -e "Playback speed"             -e "AMOLED theme"             --bytecode-mode STRIP_FAST             --unsigned             -r dist/patch-result.json             -o dist/unsigned-patched.apk             dist/upstream-universal.apk
 
       - name: Validate Morphe result and patched payload
         if: steps.decision.outputs.build == 'true' && steps.patch.outcome == 'success'
@@ -431,7 +432,7 @@ jobs:
 
           jq -e '((.patchingSteps // []) | length) > 0 and all(.patchingSteps[]?; .success == true) and ((.failedPatches // []) | length == 0)' dist/patch-result.json >/dev/null
 
-          for patch in             "Fix install conflict with stock VK"             "Bypass native signature check"             "Disable in-app update"             "Remove video ads"             "Remove clip ads"             "Filter clip feed ads"             "Block midroll ads"             "Filter Clips SDK ads"             "Block deep midroll ads"             "Hide home showcase ads"             "Disable video ad repository"             "Disable ad-free subscription promo"             "Hide promoted banner content"             "Disable ad pixel tracking"; do
+          for patch in             "Fix install conflict with stock VK"             "Bypass native signature check"             "Disable in-app update"             "Remove video ads"             "Remove clip ads"             "Filter clip feed ads"             "Block midroll ads"             "Filter Clips SDK ads"             "Block deep midroll ads"             "Hide home showcase ads"             "Disable video ad repository"             "Disable ad-free subscription promo"             "Hide promoted banner content"             "Disable ad pixel tracking"             "VKlean settings"             "Playback speed"             "AMOLED theme"; do
             jq -e --arg patch "$patch"               'any(.appliedPatches[]?; .name == $patch)'               dist/patch-result.json >/dev/null               || { echo "Required patch missing from Morphe report: $patch" >&2; exit 1; }
           done
 

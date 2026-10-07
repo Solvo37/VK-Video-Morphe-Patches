@@ -1,6 +1,9 @@
 {
   "version": "1.165.1",
   "patches": [
+    "VKlean settings",
+    "Playback speed",
+    "AMOLED theme",
     "Fix install conflict with stock VK",
     "Bypass native signature check",
     "Disable in-app update",
