@@ -92,6 +92,7 @@ public final class SettingsBridge {
 
     private static void open(Context context) {
         Intent intent = new Intent(context, VkleanSettingsActivity.class);
+        intent.putExtra(VkleanSettingsActivity.EXTRA_HOST_DARK, ThemeOverride.isDark(context));
         if (!(context instanceof Activity)) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
