@@ -1,8 +1,8 @@
 {
   "package": "com.vk.vkvideo",
-  "version_name": "1.164",
-  "version_code": 52379,
-  "release_tag": "1.164.5",
-  "verified_at": "2026-10-02",
+  "version_name": "1.165",
+  "version_code": 52788,
+  "release_tag": "1.165.0",
+  "verified_at": "2026-10-07",
   "notes": "Automated release passed all compatibility gates."
 }
