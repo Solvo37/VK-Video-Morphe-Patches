@@ -558,8 +558,10 @@ val disableVideoAdRepositoryPatch = bytecodePatch(
 
     execute {
         VideoAdvertisementsRepositoryFingerprint.method.apply {
+            val repositoryGetterName = name
+
             check(implementation!!.registerCount >= 2) {
-                "VideoAdvertisementsComponentImpl.Q6() has no safe local register"
+                "VideoAdvertisementsRepository getter has no safe local register"
             }
 
             addInstructions(
@@ -568,7 +570,7 @@ val disableVideoAdRepositoryPatch = bytecodePatch(
                     sget-object v0, Lcom/vk/libvideo/api/di/VideoAdvertisementsComponent;->Companion:$VIDEO_ADS_COMPANION
                     invoke-virtual {v0}, $VIDEO_ADS_COMPANION->getSTUB()Lcom/vk/libvideo/api/di/VideoAdvertisementsComponent;
                     move-result-object v0
-                    invoke-interface {v0}, Lcom/vk/libvideo/api/di/VideoAdvertisementsComponent;->Q6()Lcom/vk/libvideo/api/ad/VideoAdvertisementsRepository;
+                    invoke-interface {v0}, Lcom/vk/libvideo/api/di/VideoAdvertisementsComponent;->$repositoryGetterName()Lcom/vk/libvideo/api/ad/VideoAdvertisementsRepository;
                     move-result-object v0
                     return-object v0
                 """
