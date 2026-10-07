@@ -14,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'patches/**'
+      - 'extensions/**'
       - 'ci/**'
       - 'gradle/**'
       - 'settings.gradle.kts'
@@ -71,7 +72,7 @@ jobs:
 
             if [[ -n "$BEFORE" && "$BEFORE" != "$ZERO" ]]; then
               FILES="$(gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE...$GITHUB_SHA" --jq '.files[].filename')"
-              if grep -Eq '^(patches/|gradle\.properties$|patches-list\.json$)' <<< "$FILES"; then
+              if grep -Eq '^(patches/|extensions/|gradle\.properties$|patches-list\.json$)' <<< "$FILES"; then
                 CHANGED=true
               fi
             fi
