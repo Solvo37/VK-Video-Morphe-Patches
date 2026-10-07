@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'patches/**'
+      - 'extensions/**'
       - 'ci/**'
       - 'gradle/**'
       - 'settings.gradle.kts'
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - 'patches/**'
+      - 'extensions/**'
       - 'ci/**'
       - 'gradle/**'
       - 'settings.gradle.kts'
