@@ -71,18 +71,13 @@ jobs:
         run: gradle :patches:buildAndroid --no-daemon
 
       - name: Integration test VKlean settings on VK Video 1.165
-        env:
-          RUSTORE_DOWNLOADER_VERSION: v1.4.0
-          RUSTORE_DOWNLOADER_SHA256: 8ba94847a616b7b5d032285141253b8e3e2cb79d1119b827f558d48b6a157ca0
-          MORPHE_VERSION: v1.16.0
-          MORPHE_SHA256: 82a0df2ff881d83d5ca8b4f9a6ce196bd4ac3b87ff147fe37845c296b436806c
         run: |
           set -euo pipefail
 
           curl -fL --retry 4 \
             -o rustore-downloader.tar.gz \
-            "https://github.com/RD2W/rustore-apk-downloader/releases/download/${RUSTORE_DOWNLOADER_VERSION}/RuStore_ApkDownloader_${RUSTORE_DOWNLOADER_VERSION}_linux-x86_64.tar.gz"
-          echo "${RUSTORE_DOWNLOADER_SHA256}  rustore-downloader.tar.gz" | sha256sum -c -
+            "https://github.com/RD2W/rustore-apk-downloader/releases/download/v1.4.0/RuStore_ApkDownloader_v1.4.0_linux-x86_64.tar.gz"
+          echo "8ba94847a616b7b5d032285141253b8e3e2cb79d1119b827f558d48b6a157ca0  rustore-downloader.tar.gz" | sha256sum -c -
           mkdir -p tools/rustore /tmp/vklean-upstream
           tar -xzf rustore-downloader.tar.gz -C tools/rustore
           chmod +x tools/rustore/rustore_apk_downloader
@@ -93,8 +88,8 @@ jobs:
 
           curl -fL --retry 4 \
             -o morphe.jar \
-            "https://github.com/MorpheApp/morphe-desktop/releases/download/${MORPHE_VERSION}/morphe-desktop-${MORPHE_VERSION#v}-all.jar"
-          echo "${MORPHE_SHA256}  morphe.jar" | sha256sum -c -
+            "https://github.com/MorpheApp/morphe-desktop/releases/download/v1.16.0/morphe-desktop-1.16.0-all.jar"
+          echo "82a0df2ff881d83d5ca8b4f9a6ce196bd4ac3b87ff147fe37845c296b436806c  morphe.jar" | sha256sum -c -
 
           MPP="$(find patches/build/libs -maxdepth 1 -type f -name '*.mpp' ! -name '*sources*' ! -name '*javadoc*' -print -quit)"
           test -n "$MPP"
@@ -114,24 +109,25 @@ jobs:
             any(.appliedPatches[]?; .name == "VKlean settings")
           ' /tmp/vklean-settings-result.json >/dev/null
 
-          FOUND_EXTENSION=false
-          while IFS= read -r dex; do
-            if unzip -p /tmp/vklean-settings.apk "$dex" | strings -a | grep -q 'app/vklean/extension/settings/VkleanSettingsActivity'; then
-              FOUND_EXTENSION=true
-              break
-            fi
-          done < <(unzip -Z1 /tmp/vklean-settings.apk | grep -E '^classes[0-9]*\.dex
-        with:
-          name: vk-video-morphe-patches
-          path: patches/build/libs/*.mpp
-          if-no-files-found: error
-)
-          [[ "$FOUND_EXTENSION" == "true" ]]
+          python - <<'PY'
+          import zipfile
 
-          unzip -p /tmp/vklean-settings.apk AndroidManifest.xml > /tmp/vklean-manifest.axml
-          if ! strings -a /tmp/vklean-manifest.axml | grep -q 'app.vklean.extension.settings.VkleanSettingsActivity'; then
-            strings -el /tmp/vklean-manifest.axml | grep -q 'app.vklean.extension.settings.VkleanSettingsActivity'
-          fi
+          apk = "/tmp/vklean-settings.apk"
+          class_name = b"app/vklean/extension/settings/VkleanSettingsActivity"
+          manifest_name = "app.vklean.extension.settings.VkleanSettingsActivity"
+
+          with zipfile.ZipFile(apk) as archive:
+              dex_names = [name for name in archive.namelist()
+                           if name.startswith("classes") and name.endswith(".dex")]
+              if not any(class_name in archive.read(name) for name in dex_names):
+                  raise SystemExit("VKlean extension class was not injected")
+
+              manifest = archive.read("AndroidManifest.xml")
+              utf8 = manifest_name.encode("utf-8")
+              utf16 = manifest_name.encode("utf-16le")
+              if utf8 not in manifest and utf16 not in manifest:
+                  raise SystemExit("VKlean settings activity is missing from the manifest")
+          PY
 
           echo "VKlean settings patch applied successfully to the current VK Video APK."
 
