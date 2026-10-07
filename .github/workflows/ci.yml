@@ -118,34 +118,55 @@ jobs:
             -i /tmp/vklean-amoled.apk \
             -o /tmp/vklean-amoled/decode >/dev/null
 
-          OVERLAY="$(find /tmp/vklean-amoled/decode -type f -name 'vklean_amoled.xml' -print -quit)"
+          OVERLAY="$(grep -Rl 'VKleanAmoledOverlay' /tmp/vklean-amoled/decode --include='*.xml' | head -n1)"
           test -n "$OVERLAY"
-          grep -q 'name="VKleanAmoledOverlay"' "$OVERLAY"
-          grep -q 'name="vk_ui_background_content">#000000<' "$OVERLAY"
-          grep -q 'name="vk_ui_background_modal">#000000<' "$OVERLAY"
-          grep -q 'name="vk_legacy_background_content">@color/vk_black<' "$OVERLAY"
-          grep -q 'name="vk_ui_vkontakte_color_tabbar_background">#000000<' "$OVERLAY"
 
-          python - <<'PY'
+          OVERLAY="$OVERLAY" python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
           import zipfile
+
+          overlay = os.environ["OVERLAY"]
+          root = ET.parse(overlay).getroot()
+          style = next(
+              (node for node in root.findall("style")
+               if node.attrib.get("name") == "VKleanAmoledOverlay"),
+              None,
+          )
+          if style is None:
+              raise SystemExit("VKleanAmoledOverlay was not decoded")
+
+          values = {
+              node.attrib.get("name"): (node.text or "").strip().lower()
+              for node in style.findall("item")
+          }
+          black = {"#000000", "#ff000000", "@color/vk_black"}
+          required = [
+              "vk_ui_background_content",
+              "vk_ui_background_modal",
+              "vk_legacy_background_content",
+              "vk_ui_vkontakte_color_tabbar_background",
+          ]
+          for name in required:
+              if values.get(name) not in black:
+                  raise SystemExit(f"{name} is not black in AMOLED overlay: {values.get(name)!r}")
 
           apk = "/tmp/vklean-amoled.apk"
           needles = [
               b"app/vklean/extension/settings/ThemeOverride",
               b"amoledTheme",
-              b"VKleanAmoledOverlay",
           ]
           with zipfile.ZipFile(apk) as archive:
               dex_names = [name for name in archive.namelist()
                            if name.startswith("classes") and name.endswith(".dex")]
               dex = b"".join(archive.read(name) for name in dex_names)
-              for needle in needles[:2]:
+              for needle in needles:
                   if needle not in dex:
                       raise SystemExit("Missing AMOLED runtime marker: " + needle.decode())
 
               resources = archive.read("resources.arsc")
-              name = needles[2]
-              if name not in resources and "VKleanAmoledOverlay".encode("utf-16le") not in resources:
+              name = "VKleanAmoledOverlay"
+              if name.encode() not in resources and name.encode("utf-16le") not in resources:
                   raise SystemExit("AMOLED overlay resource is missing from resources.arsc")
           PY
 
