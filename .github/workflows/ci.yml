@@ -72,6 +72,65 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gradle :patches:buildAndroid --no-daemon
 
+      - name: Diagnose VK Video dark theme stack
+        run: |
+          set -euo pipefail
+
+          curl -fL --retry 4 \
+            -o rustore-downloader.tar.gz \
+            "https://github.com/RD2W/rustore-apk-downloader/releases/download/v1.4.0/RuStore_ApkDownloader_v1.4.0_linux-x86_64.tar.gz"
+          echo "8ba94847a616b7b5d032285141253b8e3e2cb79d1119b827f558d48b6a157ca0  rustore-downloader.tar.gz" | sha256sum -c -
+          mkdir -p tools/rustore /tmp/vklean-theme
+          tar -xzf rustore-downloader.tar.gz -C tools/rustore
+          chmod +x tools/rustore/rustore_apk_downloader
+          tools/rustore/rustore_apk_downloader com.vk.vkvideo /tmp/vklean-theme
+
+          APK="$(find /tmp/vklean-theme -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+
+          curl -fL --retry 4 \
+            -o APKEditor.jar \
+            "https://github.com/REAndroid/APKEditor/releases/download/V1.4.1/APKEditor-1.4.1.jar"
+          java -jar APKEditor.jar d -i "$APK" -o /tmp/vklean-theme/decode >/dev/null
+
+          mkdir -p /tmp/vklean-theme/diag
+
+          find /tmp/vklean-theme/decode -type f \
+            \( -path '*/res/values*/colors.xml' -o -path '*/res/values*/styles.xml' -o -path '*/res/values*/themes.xml' \) \
+            -print | sort > /tmp/vklean-theme/diag/resource-files.txt
+
+          grep -RIl -E \
+            'ThemeHelper|ThemeManager|ColorScheme|ColorPalette|DarkTheme|NightMode|isDark|isNight|VKTheme|VKUI|vkui|backgroundColor|surfaceColor' \
+            /tmp/vklean-theme/decode/smali* 2>/dev/null \
+            | sort | head -n 300 > /tmp/vklean-theme/diag/smali-files.txt || true
+
+          while IFS= read -r file; do
+            [[ -f "$file" ]] || continue
+            rel="${file#/tmp/vklean-theme/decode/}"
+            out="/tmp/vklean-theme/diag/files/${rel}"
+            mkdir -p "$(dirname "$out")"
+            cp "$file" "$out"
+          done < /tmp/vklean-theme/diag/smali-files.txt
+
+          for file in $(cat /tmp/vklean-theme/diag/resource-files.txt); do
+            rel="${file#/tmp/vklean-theme/decode/}"
+            out="/tmp/vklean-theme/diag/resources/${rel}"
+            mkdir -p "$(dirname "$out")"
+            cp "$file" "$out"
+          done
+
+          grep -Rni -E \
+            '#(0[0-9a-fA-F]{5}|1[0-9a-fA-F]{5}|2[0-9a-fA-F]{5}|FF0[0-9a-fA-F]{5}|FF1[0-9a-fA-F]{5}|FF2[0-9a-fA-F]{5})|name="[^"]*(background|surface|modal|sheet|panel|content)[^"]*"' \
+            /tmp/vklean-theme/diag/resources 2>/dev/null \
+            > /tmp/vklean-theme/diag/dark-colors.txt || true
+
+      - name: Upload dark theme diagnostics
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vklean-dark-theme-diagnostics
+          path: /tmp/vklean-theme/diag/**
+          if-no-files-found: error
+
       - name: Upload MPP
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
