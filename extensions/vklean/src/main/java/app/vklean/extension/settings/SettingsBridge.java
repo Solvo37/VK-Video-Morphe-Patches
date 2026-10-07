@@ -17,7 +17,6 @@ public final class SettingsBridge {
 
     public static void initialize(Context context) {
         VkleanPreferences.initialize(context);
-        ThemeOverride.install(context);
     }
 
     public static View wrap(View content, Object hostFragment) {
