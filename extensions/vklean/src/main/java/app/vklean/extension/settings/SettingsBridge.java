@@ -15,7 +15,12 @@ import android.widget.TextView;
 public final class SettingsBridge {
     private SettingsBridge() {}
 
+    public static void initialize(Context context) {
+        VkleanPreferences.initialize(context);
+    }
+
     public static View wrap(View content, Object hostFragment) {
+        initialize(content == null ? null : content.getContext());
         if (content == null) return null;
 
         final Context context = content.getContext();
