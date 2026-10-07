@@ -70,12 +70,13 @@ public final class VkleanSettingsActivity extends Activity {
     private void configureTheme() {
         dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                 == Configuration.UI_MODE_NIGHT_YES;
-        background = dark ? 0xFF111112 : 0xFFF4F4F6;
-        card = dark ? 0xFF1D1D1F : 0xFFFFFFFF;
+        boolean amoled = dark && ThemeOverride.isAvailable(this) && VkleanPreferences.amoledTheme();
+        background = amoled ? 0xFF000000 : (dark ? 0xFF111112 : 0xFFF4F4F6);
+        card = amoled ? 0xFF080808 : (dark ? 0xFF1D1D1F : 0xFFFFFFFF);
         primary = dark ? 0xFFF5F5F7 : 0xFF111114;
         secondary = dark ? 0xFFA8A8AD : 0xFF6D6D72;
         accent = 0xFF2688EB;
-        divider = dark ? 0xFF303033 : 0xFFE7E7EA;
+        divider = amoled ? 0xFF202020 : (dark ? 0xFF303033 : 0xFFE7E7EA);
 
         Window window = getWindow();
         window.setStatusBarColor(background);
@@ -111,7 +112,7 @@ public final class VkleanSettingsActivity extends Activity {
         }
 
         TextView note = text(
-                "VKlean Settings готов к runtime-настройкам. Первый рабочий пункт — постоянная скорость воспроизведения.",
+                "VKlean Settings уже управляет скоростью воспроизведения и AMOLED-темой; остальные функции подключаются к тем же разделам.",
                 13f,
                 secondary,
                 Typeface.NORMAL
@@ -152,6 +153,10 @@ public final class VkleanSettingsActivity extends Activity {
             if ("Воспроизведение".equals(section)
                     && "Скорость воспроизведения".equals(entries[i])) {
                 cardView.addView(playbackSpeedRow());
+            } else if ("Внешний вид".equals(section)
+                    && "AMOLED-тема".equals(entries[i])
+                    && ThemeOverride.isAvailable(this)) {
+                cardView.addView(amoledThemeRow());
             } else {
                 cardView.addView(plannedRow(entries[i]));
             }
@@ -297,6 +302,60 @@ public final class VkleanSettingsActivity extends Activity {
         }
         String raw = Float.toString(value);
         return raw + "×";
+    }
+
+    private View amoledThemeRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(16), dp(12), dp(12), dp(12));
+        row.setMinimumHeight(dp(68));
+
+        LinearLayout labels = new LinearLayout(this);
+        labels.setOrientation(LinearLayout.VERTICAL);
+
+        TextView name = text("AMOLED-тема", 15f, primary, Typeface.NORMAL);
+        labels.addView(name, matchWrap());
+
+        TextView summary = text(
+                dark
+                        ? "Чистый чёрный фон OLED · после изменения перезапустите VK Видео"
+                        : "Применяется только в тёмной теме · после изменения нужен перезапуск",
+                12f,
+                secondary,
+                Typeface.NORMAL
+        );
+        LinearLayout.LayoutParams summaryParams = matchWrap();
+        summaryParams.topMargin = dp(4);
+        labels.addView(summary, summaryParams);
+
+        row.addView(labels, new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+
+        android.widget.Switch toggle = new android.widget.Switch(this);
+        toggle.setChecked(VkleanPreferences.amoledTheme());
+        toggle.setContentDescription("AMOLED theme");
+        toggle.setOnCheckedChangeListener((button, enabled) -> {
+            VkleanPreferences.setAmoledTheme(this, enabled);
+            android.widget.Toast.makeText(
+                    this,
+                    "Перезапустите VK Видео, чтобы тема применилась ко всем экранам",
+                    android.widget.Toast.LENGTH_SHORT
+            ).show();
+            recreate();
+        });
+        row.addView(toggle, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        row.setOnClickListener(v -> toggle.setChecked(!toggle.isChecked()));
+        row.setClickable(true);
+        row.setFocusable(true);
+        return row;
     }
 
     private View plannedRow(String title) {
