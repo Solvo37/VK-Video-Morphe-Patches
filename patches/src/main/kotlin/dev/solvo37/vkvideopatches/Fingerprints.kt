@@ -318,7 +318,6 @@ internal object HomeShowcaseCatalogFactoryFingerprint : Fingerprint(
 // Real video-player advertising repository.
 internal object VideoAdvertisementsRepositoryFingerprint : Fingerprint(
     definingClass = "Lcom/vk/libvideo/impl/di/VideoAdvertisementsComponentImpl;",
-    name = "Q6",
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
     returnType = "Lcom/vk/libvideo/api/ad/VideoAdvertisementsRepository;",
     parameters = emptyList()
