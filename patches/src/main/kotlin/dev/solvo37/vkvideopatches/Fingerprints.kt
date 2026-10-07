@@ -309,8 +309,8 @@ internal object HomeShowcaseCatalogFactoryFingerprint : Fingerprint(
     ),
     filters = listOf(
         methodCall(
-            definingClass = "Lcom/vk/catalog2/common/ui/mvp/configuration/a;",
-            name = "a"
+            definingClass = "this",
+            returnType = "Lcom/vk/catalog2/common/ui/holders/ads/AdShowCaseBannerVh;"
         )
     )
 )
