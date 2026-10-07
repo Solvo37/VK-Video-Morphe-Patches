@@ -72,6 +72,52 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gradle :patches:buildAndroid --no-daemon
 
+      - name: Diagnose VK Video playback speed stack
+        run: |
+          set -euo pipefail
+
+          curl -fL --retry 4 \
+            -o rustore-downloader.tar.gz \
+            "https://github.com/RD2W/rustore-apk-downloader/releases/download/v1.4.0/RuStore_ApkDownloader_v1.4.0_linux-x86_64.tar.gz"
+          echo "8ba94847a616b7b5d032285141253b8e3e2cb79d1119b827f558d48b6a157ca0  rustore-downloader.tar.gz" | sha256sum -c -
+          mkdir -p tools/rustore /tmp/vklean-speed
+          tar -xzf rustore-downloader.tar.gz -C tools/rustore
+          chmod +x tools/rustore/rustore_apk_downloader
+          tools/rustore/rustore_apk_downloader com.vk.vkvideo /tmp/vklean-speed
+
+          APK="$(find /tmp/vklean-speed -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+
+          curl -fL --retry 4 \
+            -o APKEditor.jar \
+            "https://github.com/REAndroid/APKEditor/releases/download/V1.4.1/APKEditor-1.4.1.jar"
+
+          java -jar APKEditor.jar d -i "$APK" -o /tmp/vklean-speed/decode >/dev/null
+
+          mkdir -p /tmp/vklean-speed/diag
+          grep -RIl -E \
+            'VideoPlaybackSpeedDefaultRepository|VideoPlaybackSpeedComponent|PlaybackSpeedAdapter|PlaybackSpeedButton|VideoSpeedBottomSheet|setPlaybackSpeed|OpenPlaybackSpeed' \
+            /tmp/vklean-speed/decode \
+            | sort > /tmp/vklean-speed/diag/files.txt || true
+
+          while IFS= read -r file; do
+            [[ -f "$file" ]] || continue
+            rel="${file#/tmp/vklean-speed/decode/}"
+            out="/tmp/vklean-speed/diag/${rel}"
+            mkdir -p "$(dirname "$out")"
+            cp "$file" "$out"
+          done < /tmp/vklean-speed/diag/files.txt
+
+          echo "=== playback speed files ==="
+          cat /tmp/vklean-speed/diag/files.txt
+
+      - name: Upload playback speed diagnostics
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: vklean-playback-speed-diagnostics
+          path: /tmp/vklean-speed/diag/**
+          if-no-files-found: error
+
       - name: Upload MPP
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
