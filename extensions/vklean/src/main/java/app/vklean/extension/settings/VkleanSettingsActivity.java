@@ -21,6 +21,7 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public final class VkleanSettingsActivity extends Activity {
     private static final String EXTRA_SECTION = "vklean_section";
+    static final String EXTRA_HOST_DARK = "vklean_host_dark";
 
     private boolean dark;
     private int background;
@@ -68,8 +69,12 @@ public final class VkleanSettingsActivity extends Activity {
     }
 
     private void configureTheme() {
-        dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
-                == Configuration.UI_MODE_NIGHT_YES;
+        boolean systemDark =
+                (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                        == Configuration.UI_MODE_NIGHT_YES;
+        dark = getIntent().hasExtra(EXTRA_HOST_DARK)
+                ? getIntent().getBooleanExtra(EXTRA_HOST_DARK, systemDark)
+                : systemDark;
         boolean amoled = dark && ThemeOverride.isAvailable(this) && VkleanPreferences.amoledTheme();
         background = amoled ? 0xFF000000 : (dark ? 0xFF111112 : 0xFFF4F4F6);
         card = amoled ? 0xFF080808 : (dark ? 0xFF1D1D1F : 0xFFFFFFFF);
@@ -387,6 +392,7 @@ public final class VkleanSettingsActivity extends Activity {
     private void openSection(String section) {
         Intent intent = new Intent(this, VkleanSettingsActivity.class);
         intent.putExtra(EXTRA_SECTION, section);
+        intent.putExtra(EXTRA_HOST_DARK, dark);
         startActivity(intent);
     }
 
