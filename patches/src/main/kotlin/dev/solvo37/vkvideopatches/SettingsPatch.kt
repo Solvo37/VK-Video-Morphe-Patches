@@ -15,6 +15,8 @@ private const val VK_SETTINGS_FRAGMENT =
     "Lcom/vk/video/screens/settings/main/ui/VideoUserSettingsFragment;"
 private const val SETTINGS_BRIDGE =
     "Lapp/vklean/extension/settings/SettingsBridge;"
+private const val THEME_OVERRIDE =
+    "Lapp/vklean/extension/settings/ThemeOverride;"
 private const val SETTINGS_ACTIVITY =
     "app.vklean.extension.settings.VkleanSettingsActivity"
 private const val MAIN_ACTIVITY =
@@ -78,6 +80,7 @@ val vkleanSettingsPatch = bytecodePatch(
             0,
             """
                 invoke-static/range {p0 .. p0}, $SETTINGS_BRIDGE->initialize(Landroid/content/Context;)V
+                invoke-static/range {p0 .. p0}, $THEME_OVERRIDE->apply(Landroid/app/Activity;)V
             """
         )
 
