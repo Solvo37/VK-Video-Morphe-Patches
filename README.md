@@ -14,7 +14,7 @@ Android внутри APK: **1.164 / versionCode 52379**.
 
 ➡️ [Скачать APK 1.164.5](https://github.com/Solvo37/vk-video-morphe-patches/releases/tag/1.164.5)
 
-В Releases публикуется **только один APK**. Служебные отчёты, checksums и build metadata остаются в GitHub Actions и не засоряют список загрузок.
+В Releases публикуются **один готовый APK** для Obtainium и **один .mpp bundle** для Morphe. Служебные отчёты, checksums и build metadata остаются в GitHub Actions.
 
 ## Что изменено
 
@@ -73,6 +73,22 @@ Release title filter при необходимости:
 ```text
 ^VK Video
 ```
+
+## Morphe на Android
+
+Тот же репозиторий можно добавить в **Morphe** как удалённый источник патчей:
+
+```text
+https://github.com/Solvo37/VK-Video-Morphe-Patches
+```
+
+Или открыть готовую ссылку на Android:
+
+https://morphe.software/add-source?github=Solvo37/VK-Video-Morphe-Patches
+
+После каждого успешного compatibility build GitHub Actions публикует `.mpp`, обновляет `patches-bundle.json` и помечает проверенную версию VK Видео как стабильную цель. Morphe затем может обновлять источник прямо с GitHub и патчить оригинальный APK локально на устройстве.
+
+Это отдельный способ установки от Obtainium: Obtainium получает уже готовый подписанный APK, а Morphe применяет тот же набор патчей самостоятельно на Android.
 
 ## Для разработки
 

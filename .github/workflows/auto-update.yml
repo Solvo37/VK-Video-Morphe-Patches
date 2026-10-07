@@ -19,6 +19,7 @@ on:
       - 'settings.gradle.kts'
       - 'gradle.properties'
       - 'patches-list.json'
+      - 'patches-bundle.json'
       - '.github/workflows/auto-update.yml'
 
 permissions:
@@ -310,6 +311,53 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "build=true" >> "$GITHUB_OUTPUT"
           echo "Will build VK Video $VERSION ($VERSION_CODE) as immutable release revision $TAG."
+
+      - name: Prepare Morphe source build
+        if: steps.decision.outputs.build == 'true'
+        env:
+          VERSION: ${{ steps.upstream.outputs.version }}
+          TAG: ${{ steps.decision.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          tag = os.environ["TAG"]
+
+          constants = Path("patches/src/main/kotlin/dev/solvo37/vkvideopatches/Constants.kt")
+          text = constants.read_text()
+          text, count = re.subn(
+              r'private const val VERIFIED_VERSION = "[^"]+"',
+              f'private const val VERIFIED_VERSION = "{version}"',
+              text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not update VERIFIED_VERSION in Constants.kt")
+          constants.write_text(text)
+
+          props = Path("gradle.properties")
+          text = props.read_text()
+          text, count = re.subn(
+              r'(?m)^version\s*=\s*.*$',
+              f'version = {tag}',
+              text,
+              count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not update version in gradle.properties")
+          props.write_text(text)
+          PY
+
+          jq --arg version "$TAG" '.version = $version' patches-list.json > patches-list.json.tmp
+          mv patches-list.json.tmp patches-list.json
+
+          echo "Morphe bundle version: $TAG"
+          echo "Stable VK Video target: $VERSION"
 
       - name: Build Morphe patch bundle
         if: steps.decision.outputs.build == 'true'
@@ -604,16 +652,19 @@ jobs:
           SOURCE: ${{ steps.upstream.outputs.source }}
           TAG: ${{ steps.decision.outputs.tag }}
           APK: ${{ steps.signed.outputs.apk }}
+          MPP: ${{ steps.mpp.outputs.path }}
         run: |
           set -euo pipefail
 
           PUBLISH_APK="dist/VK-Video-${TAG}-patched.apk"
+          PUBLISH_MPP="dist/patches-${TAG}.mpp"
           cp "$APK" "$PUBLISH_APK"
+          cp "$MPP" "$PUBLISH_MPP"
 
           cat > dist/release-notes.md <<EOF
           ## VK Video $TAG
 
-          Готовый подписанный ARM64 APK.
+          Готовый подписанный ARM64 APK и bundle патчей для Morphe на Android.
 
           - Android version: **$VERSION**
           - versionCode: **$VERSION_CODE**
@@ -624,7 +675,7 @@ jobs:
           - Morphe STRIP_FAST → zipalign → APK Signature Scheme v3
           - статические compatibility gates пройдены
 
-          В Release намеренно публикуется только APK. Служебные отчёты остаются в GitHub Actions.
+          В Release публикуются APK для Obtainium и .mpp для Morphe. Служебные отчёты остаются в GitHub Actions.
           EOF
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
@@ -632,11 +683,30 @@ jobs:
             exit 1
           fi
 
-          gh release create "$TAG" "$PUBLISH_APK#VK Video patched APK" \
+          gh release create "$TAG" \
+            "$PUBLISH_APK#VK Video patched APK" \
+            "$PUBLISH_MPP#Morphe patch bundle" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "VK Video $TAG — patched APK" \
+            --title "VK Video $TAG — patched APK + Morphe patches" \
             --notes-file dist/release-notes.md \
             --latest
+
+          CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/patches-${TAG}.mpp"
+          DESCRIPTION="VK Video patches verified for ${VERSION} (versionCode ${VERSION_CODE})."
+
+          jq -n \
+            --arg created_at "$CREATED_AT" \
+            --arg description "$DESCRIPTION" \
+            --arg download_url "$DOWNLOAD_URL" \
+            --arg version "$TAG" \
+            '{
+              created_at: $created_at,
+              description: $description,
+              download_url: $download_url,
+              signature_download_url: "",
+              version: $version
+            }' > patches-bundle.json
 
       - name: Advance verified baseline
         if: steps.decision.outputs.build == 'true' && steps.patch.outcome == 'success' && steps.static_gate.outcome == 'success' && env.HAS_SIGNING == 'true' && steps.runtime.outputs.quarantined != 'true'
@@ -663,12 +733,17 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ci/baseline.json
+          git add \
+            ci/baseline.json \
+            gradle.properties \
+            patches-list.json \
+            patches-bundle.json \
+            patches/src/main/kotlin/dev/solvo37/vkvideopatches/Constants.kt
           if git diff --cached --quiet; then
             exit 0
           fi
 
-          git commit -m "chore: advance verified baseline to $TAG"
+          git commit -m "chore: publish verified Morphe source $TAG [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
 
