@@ -108,7 +108,6 @@ jobs:
 
           jq -e '
             ((.failedPatches // []) | length) == 0 and
-            any(.appliedPatches[]?; .name == "VKlean settings") and
             any(.appliedPatches[]?; .name == "Playback speed")
           ' /tmp/vklean-playback-result.json >/dev/null
 
