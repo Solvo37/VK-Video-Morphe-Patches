@@ -64,24 +64,21 @@ private val amoledThemeResourcesPatch = resourcePatch {
             throw PatchException("AMOLED theme: could not create res/values")
         }
 
-        val items = AMOLED_ATTRIBUTES.entries.joinToString("\n") { (name, value) ->
-            "    <item name=\"$name\">$value</item>"
+        val overlay = buildString {
+            appendLine("<resources>")
+            appendLine("  <style name=\"$AMOLED_STYLE\">")
+            appendLine("    <item name=\"android:windowBackground\">@color/vk_black</item>")
+            appendLine("    <item name=\"android:colorBackground\">@color/vk_black</item>")
+            appendLine("    <item name=\"android:statusBarColor\">@color/vk_black</item>")
+            appendLine("    <item name=\"android:navigationBarColor\">@color/vk_black</item>")
+            AMOLED_ATTRIBUTES.forEach { (name, value) ->
+                appendLine("    <item name=\"$name\">$value</item>")
+            }
+            appendLine("  </style>")
+            appendLine("</resources>")
         }
 
-        values.resolve("vklean_amoled.xml").writeText(
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <resources>
-              <style name="$AMOLED_STYLE">
-                <item name="android:windowBackground">@color/vk_black</item>
-                <item name="android:colorBackground">@color/vk_black</item>
-                <item name="android:statusBarColor">@color/vk_black</item>
-                <item name="android:navigationBarColor">@color/vk_black</item>
-            $items
-              </style>
-            </resources>
-            """.trimIndent() + "\n"
-        )
+        values.resolve("vklean_amoled.xml").writeText(overlay)
     }
 }
 
