@@ -2,12 +2,12 @@
 
 ## Скачать
 
-Актуальный APK всегда находится в [Latest Release](https://github.com/Solvo37/vk-video-morphe-patches/releases/latest).
+Актуальный APK всегда находится в [Latest Release](https://github.com/Solvo37/VKlean/releases/latest).
 
-Текущий стабильный файл:
+Проверенный стабильный релиз: **1.165.1**, Android **1.165 / versionCode 52788**. При установке выбирайте APK из Latest Release; имя файла ниже относится к этому проверенному релизу:
 
 ```text
-VK-Video-1.163.6-patched.apk
+VK-Video-1.165.1-patched.apk
 ```
 
 В каждом публичном Release намеренно находится только **один APK**.
@@ -28,7 +28,7 @@ VK-Video-1.163.6-patched.apk
 Repository URL:
 
 ```text
-https://github.com/Solvo37/vk-video-morphe-patches
+https://github.com/Solvo37/VKlean
 ```
 
 APK asset filter:
@@ -42,6 +42,10 @@ Release title filter при необходимости:
 ```text
 ^VK Video
 ```
+
+В Obtainium включите обновление сведений перед скачиванием (`refreshBeforeDownload`) и отключите возврат к старым релизам (`fallbackToOlderReleases`). Готовые кнопки импорта находятся в [README](../README.md#obtainium).
+
+Старый URL `Solvo37/VK-Video-Morphe-Patches` перенаправляется в `Solvo37/VKlean`; существующий источник можно оставить без переустановки приложения.
 
 ## Проверка подписи
 
